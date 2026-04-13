@@ -6,417 +6,670 @@
     <meta name="theme-color" content="#000000">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="OCRcall">
-    <meta name="description" content="تحويل الصور إلى جهات اتصال - OCRcall من Almas Solutions">
-    
     <title>OCRcall²⁰²⁶ | Almas Solutions</title>
     
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192x192.png">
-    
-    <!-- استخدام CDN لضمان عدم وجود 404 -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+
     <style>
-        /* كل الكود بتاع الـ CSS زي ما هو */
-        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        :root {
-            --primary: #007AFF; --success: #34C759; --danger: #FF3B30;
-            --warning: #FF9500; --dark: #1C1C1E; --gray: #8E8E93;
-            --light-gray: #F2F2F7; --gold: #D4AF37; --brown-dark: #5D4037;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
         }
         body {
-            background: var(--light-gray);
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+            background: #F2F2F7;
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
             overflow: hidden;
             position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            width: 100%; height: 100%;
+            width: 100%;
+            height: 100%;
+        }
+        :root {
+            --primary: #007AFF;
+            --success: #34C759;
+            --danger: #FF3B30;
+            --gold: #D4AF37;
+            --dark: #1C1C1E;
+            --brown: #5D4037;
         }
         .status-bar {
-            background: var(--dark); color: white; padding: 6px 12px; font-size: 11px;
-            display: flex; justify-content: space-between; align-items: center;
-            height: 38px;
+            background: var(--dark);
+            color: white;
+            padding: 6px 12px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            height: 40px;
         }
-        .offline-indicator {
-            display: none; background: var(--warning); color: var(--dark);
-            padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: bold;
-        }
-        .offline-indicator.show { display: inline-block; }
         .app-container {
-            display: flex; flex-direction: column; height: calc(100% - 38px);
-            max-width: 500px; margin: 0 auto; background: white; overflow: hidden;
+            height: calc(100% - 40px);
+            max-width: 500px;
+            margin: auto;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
         }
+        /* منطقة المسح (الكاميرا/الصورة) */
         .scan-area {
-            position: relative; background: #000; width: 100%;
-            aspect-ratio: 3 / 1; overflow: hidden; flex-shrink: 0;
+            width: 100%;
+            aspect-ratio: 3 / 1;
+            background: black;
+            position: relative;
+            overflow: hidden;
+            flex-shrink: 0;
         }
         .focus-rectangle {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            border: 3px solid var(--warning); box-shadow: 0 0 0 2000px rgba(0,0,0,0.7);
-            pointer-events: none; z-index: 5; animation: pulse 1.5s infinite;
+            position: absolute;
+            inset: 0;
+            border: 3px solid #FF9500;
+            box-shadow: 0 0 0 2000px rgba(0,0,0,0.6);
+            pointer-events: none;
+            z-index: 5;
         }
-        .camera-preview { position: relative; background: #000; width: 100%; height: 100%; overflow: hidden; }
-        #video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
-        .image-container { position: relative; width: 100%; height: 100%; overflow: hidden; background: #000; touch-action: none; display: none; }
-        #uploaded-image { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; cursor: grab; }
+        .camera-preview, .image-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+        #video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        #uploaded-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            cursor: grab;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
         .image-controls {
-            position: absolute; bottom: 10px; left: 10px; right: 10px;
-            display: flex; gap: 8px; z-index: 20; justify-content: center;
+            position: absolute;
+            bottom: 8px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            z-index: 10;
         }
-        .image-control-btn {
-            background: rgba(0,0,0,0.7); color: white; border: none;
-            width: 40px; height: 40px; border-radius: 50%; cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
+        .ctrl-btn {
+            background: rgba(0,0,0,0.7);
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 18px;
+            backdrop-filter: blur(4px);
         }
         .flash-btn {
-            position: absolute; bottom: 10px; right: 10px; width: 40px; height: 40px;
-            background: rgba(0,0,0,0.7); border-radius: 50%; display: flex;
-            align-items: center; justify-content: center; color: white; cursor: pointer;
-            z-index: 10; backdrop-filter: blur(10px); border: none;
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            background: rgba(0,0,0,0.7);
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            z-index: 10;
         }
         .controls {
-            flex: 1; overflow-y: auto; padding: 8px; display: flex; flex-direction: column;
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
-        .controls::-webkit-scrollbar { width: 3px; }
+        .status {
+            background: #F2F2F7;
+            padding: 8px;
+            text-align: center;
+            border-radius: 12px;
+            font-size: 13px;
+            color: var(--primary);
+        }
+        .name-field {
+            position: relative;
+        }
+        .name-field input {
+            width: 100%;
+            height: 48px;
+            text-align: center;
+            background: #FFF9E6;
+            border: 1px solid #ccc;
+            border-radius: 12px;
+            padding: 0 35px;
+            font-size: 16px;
+        }
+        .clear-name {
+            position: absolute;
+            left: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: var(--danger);
+            color: white;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+        }
+        .phone-wrapper {
+            position: relative;
+        }
+        .phone-number {
+            background: #F2F2F7;
+            padding: 12px;
+            text-align: center;
+            font-size: 32px;
+            font-weight: bold;
+            color: var(--brown);
+            border-radius: 12px;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+        .phone-number.editing {
+            border-color: var(--primary);
+            background: #FFF9E6;
+        }
+        .edit-phone-btn {
+            position: absolute;
+            left: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: var(--primary);
+            color: white;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            border: none;
+        }
+        .keyboard {
+            display: none;
+            grid-template-columns: repeat(3,1fr);
+            gap: 8px;
+            background: #F2F2F7;
+            padding: 8px;
+            border-radius: 16px;
+        }
+        .keyboard.show {
+            display: grid;
+        }
+        .key {
+            background: white;
+            padding: 12px;
+            text-align: center;
+            border-radius: 12px;
+            font-size: 22px;
+            font-weight: bold;
+        }
+        .chips-wrapper {
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+        .chips {
+            display: inline-flex;
+            gap: 8px;
+            padding: 4px;
+        }
+        .chip {
+            background: #F2F2F7;
+            padding: 6px 16px;
+            border-radius: 30px;
+            font-size: 13px;
+            display: inline-block;
+        }
+        textarea {
+            width: 100%;
+            height: 70px;
+            border-radius: 12px;
+            padding: 8px;
+            border: 1px solid #ccc;
+            resize: none;
+        }
+        .btn-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
         .btn {
-            width: 100%; height: 44px; border: none; border-radius: 10px;
-            font-weight: 600; font-size: 13px; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; gap: 6px;
+            padding: 10px;
+            border: none;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
         }
-        .btn:active { transform: scale(0.98); }
         .btn-primary { background: var(--primary); color: white; }
         .btn-success { background: var(--success); color: white; }
         .btn-danger { background: var(--danger); color: white; }
-        .btn-secondary { background: var(--gray); color: white; }
-        .btn-warning { background: var(--warning); color: white; }
+        .btn-warning { background: #FF9500; color: white; }
         .btn-info { background: #17a2b8; color: white; }
-        .row-buttons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 8px; }
-        .status {
-            text-align: center; padding: 6px; font-weight: 500; font-size: 12px;
-            color: var(--primary); background: var(--light-gray); border-radius: 10px; margin-bottom: 8px;
+        .btn-secondary { background: #8E8E93; color: white; }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 8px;
         }
-        .name-field { position: relative; margin-bottom: 8px; }
-        .name-field input {
-            width: 100%; height: 44px; border: 1px solid #E5E5EA; border-radius: 10px;
-            font-size: 14px; text-align: center; background: #FFF9E6; padding: 0 35px;
-        }
-        .clear-name {
-            position: absolute; left: 8px; top: 50%; transform: translateY(-50%);
-            background: var(--danger); color: white; border: none; width: 28px; height: 28px;
-            border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;
-        }
-        .phone-wrapper { position: relative; margin-bottom: 8px; }
-        .phone-number {
-            font-size: 28px; font-weight: bold; color: var(--brown-dark); text-align: center;
-            padding: 10px; background: var(--light-gray); border-radius: 10px;
-            font-family: 'Courier New', monospace; letter-spacing: 2px; cursor: pointer;
-            border: 2px solid transparent;
-        }
-        .phone-number.editing { border-color: var(--primary); background: #FFF9E6; }
-        .edit-phone-btn {
-            position: absolute; left: 8px; top: 50%; transform: translateY(-50%);
-            background: var(--primary); color: white; border: none; width: 32px; height: 32px;
-            border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;
-        }
-        .edit-phone-btn.active { background: var(--danger); }
-        .keyboard {
-            display: none; grid-template-columns: repeat(3, 1fr); gap: 5px;
-            background: var(--light-gray); padding: 6px; border-radius: 12px; margin-bottom: 8px;
-        }
-        .keyboard.show { display: grid; }
-        .key {
-            background: white; padding: 10px; text-align: center; border-radius: 10px;
-            font-weight: bold; font-size: 18px; cursor: pointer;
-        }
-        .chips-wrapper {
-            overflow-x: auto; overflow-y: hidden; white-space: nowrap;
-            margin-bottom: 8px; -webkit-overflow-scrolling: touch;
-        }
-        .chips { display: inline-flex; gap: 6px; padding: 4px 0; }
-        .chip {
-            display: inline-block; background: var(--light-gray); padding: 6px 14px;
-            border-radius: 20px; font-size: 12px; cursor: pointer; white-space: nowrap;
-        }
-        textarea {
-            width: 100%; height: 60px; border: 1px solid #E5E5EA; border-radius: 10px;
-            padding: 8px; font-size: 12px; resize: none; margin-bottom: 8px;
-        }
-        .tabs { display: flex; gap: 8px; margin-bottom: 8px; }
         .tab {
-            flex: 1; padding: 8px; text-align: center; background: var(--light-gray);
-            border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 13px;
+            flex: 1;
+            text-align: center;
+            padding: 8px;
+            background: #F2F2F7;
+            border-radius: 12px;
+            font-weight: bold;
         }
-        .tab.active { background: var(--primary); color: white; }
-        .tab-content { display: none; flex: 1; flex-direction: column; overflow: hidden; }
-        .tab-content.active { display: flex; }
-        .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-        .history-list { flex: 1; overflow-y: auto; }
+        .tab.active {
+            background: var(--primary);
+            color: white;
+        }
+        .tab-content {
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .tab-content.active {
+            display: flex;
+        }
+        .history-list {
+            max-height: 260px;
+            overflow-y: auto;
+        }
         .history-item {
-            background: var(--light-gray); padding: 8px; border-radius: 10px; margin-bottom: 6px; cursor: pointer;
-        }
-        .clear-cache-btn {
-            background: var(--danger); color: white; border: none;
-            padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 11px;
+            background: #F2F2F7;
+            margin-bottom: 6px;
+            padding: 8px;
+            border-radius: 12px;
         }
         .footer {
-            background: linear-gradient(135deg, var(--dark) 0%, #2a2a2e 100%);
-            color: var(--gold); text-align: center; padding: 8px; font-size: 11px;
-            font-weight: bold; border-top: 1px solid var(--gold); margin-top: 8px;
+            background: black;
+            color: var(--gold);
+            text-align: center;
+            padding: 6px;
+            font-size: 11px;
+            border-top: 1px solid var(--gold);
         }
         .modal {
-            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.8); z-index: 2000; justify-content: center;
-            align-items: center; padding: 20px;
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
         }
         .modal.show { display: flex; }
         .modal-content {
-            background: white; border-radius: 20px; max-width: 400px;
-            width: 100%; max-height: 80vh; overflow-y: auto; padding: 20px;
+            background: white;
+            max-width: 90%;
+            padding: 20px;
+            border-radius: 20px;
+            max-height: 80vh;
+            overflow: auto;
         }
-        .developer-info {
-            background: var(--light-gray); padding: 12px; border-radius: 12px;
-            margin: 15px 0; text-align: center;
+        .loading {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 3000;
         }
-        .loading-overlay {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.8); display: none; justify-content: center;
-            align-items: center; z-index: 1000;
-        }
-        .loading-content { background: white; padding: 25px; border-radius: 16px; text-align: center; }
         .spinner {
-            width: 40px; height: 40px; border: 3px solid var(--light-gray);
-            border-top-color: var(--primary); border-radius: 50%;
-            animation: spin 1s linear infinite; margin: 0 auto 12px;
+            width: 40px;
+            height: 40px;
+            border: 4px solid white;
+            border-top-color: var(--gold);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .error-message {
-            background: var(--danger); color: white; padding: 6px; border-radius: 10px;
-            text-align: center; margin-bottom: 8px; display: none; font-size: 12px;
-        }
-        #startScreen { flex: 1; display: flex; flex-direction: column; justify-content: center; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
     </style>
 </head>
 <body>
 
 <div class="status-bar">
     <span>📱 OCRcall²⁰²⁶</span>
-    <div class="offline-indicator" id="offlineIndicator"><i class="fas fa-wifi"></i> غير متصل</div>
+    <span id="offlineBadge" style="display:none;">⚠️ غير متصل</span>
 </div>
 
 <div class="app-container">
-    <div class="scan-area" id="scanArea">
+    <div class="scan-area">
         <div class="camera-preview" id="cameraPreview">
-            <div class="focus-rectangle" id="focusRectangle"></div>
+            <div class="focus-rectangle"></div>
             <video id="video" autoplay playsinline></video>
-            <button class="flash-btn" id="flashBtn" style="display: none;"><i class="fas fa-bolt"></i></button>
+            <button class="flash-btn" id="flashBtn" style="display:none;">🔦</button>
         </div>
-        <div class="image-container" id="imageContainer">
-            <img id="uploaded-image" alt="Uploaded preview" draggable="false">
+        <div class="image-container" id="imageContainer" style="display:none;">
+            <img id="uploaded-image">
             <div class="image-controls">
-                <button class="image-control-btn" id="zoomOutBtn"><i class="fas fa-search-minus"></i></button>
-                <button class="image-control-btn" id="zoomInBtn"><i class="fas fa-search-plus"></i></button>
-                <button class="image-control-btn" id="rotateLeftBtn"><i class="fas fa-undo-alt"></i></button>
-                <button class="image-control-btn" id="rotateRightBtn"><i class="fas fa-redo-alt"></i></button>
-                <button class="image-control-btn" id="resetImageBtn"><i class="fas fa-sync-alt"></i></button>
+                <button class="ctrl-btn" id="zoomOut">−</button>
+                <button class="ctrl-btn" id="zoomIn">+</button>
+                <button class="ctrl-btn" id="rotateLeft10">↺10°</button>
+                <button class="ctrl-btn" id="rotateRight10">↻10°</button>
+                <button class="ctrl-btn" id="resetImg">⟳</button>
             </div>
         </div>
     </div>
 
     <div class="controls">
-        <div class="status" id="status"><i class="fas fa-check-circle"></i> جاهز للاستخدام</div>
-        <div class="error-message" id="errorMessage"></div>
-
+        <div class="status" id="status">✅ جاهز للاستخدام</div>
         <div id="startScreen">
-            <button class="btn btn-primary" id="cameraBtn"><i class="fas fa-camera"></i> فتح الكاميرا</button>
-            <label class="btn btn-secondary" for="imageUpload"><i class="fas fa-image"></i> رفع صورة</label>
-            <input type="file" id="imageUpload" accept="image/*" style="display: none;">
+            <button class="btn btn-primary" id="cameraBtn">📷 فتح الكاميرا</button>
+            <label class="btn btn-secondary" for="fileUp">🖼️ رفع صورة</label>
+            <input type="file" id="fileUp" accept="image/*" style="display:none">
         </div>
 
-        <div id="resultScreen" style="display: none; flex: 1; flex-direction: column; overflow: hidden;">
+        <div id="resultScreen" style="display:none; flex-direction:column; gap:10px;">
             <div class="tabs">
                 <div class="tab active" data-tab="main">📝 رئيسي</div>
                 <div class="tab" data-tab="history">📋 السجل</div>
             </div>
+
             <div id="mainTab" class="tab-content active">
-                <button class="btn btn-secondary" id="retryOcrBtn" style="display: none;"><i class="fas fa-redo-alt"></i> محاولة مرة أخرى</button>
+                <button class="btn btn-secondary" id="retryBtn" style="display:none;">🔄 إعادة المحاولة</button>
                 <div class="name-field">
-                    <input type="text" id="customerName" placeholder="اسم العميل" autocomplete="off">
-                    <button class="clear-name" onclick="document.getElementById('customerName').value = ''"><i class="fas fa-times"></i></button>
+                    <input id="customerName" placeholder="اسم العميل">
+                    <button class="clear-name" onclick="document.getElementById('customerName').value=''">✖</button>
                 </div>
                 <div class="phone-wrapper">
-                    <div class="phone-number" id="phoneNumber"></div>
-                    <button class="edit-phone-btn" id="editPhoneBtn"><i class="fas fa-edit"></i></button>
+                    <div class="phone-number" id="phoneDisplay"></div>
+                    <button class="edit-phone-btn" id="editPhoneBtn">✏️</button>
                 </div>
                 <div class="keyboard" id="keyboard">
-                    <div class="key" onclick="window.addDigit('9')">9</div><div class="key" onclick="window.addDigit('8')">8</div><div class="key" onclick="window.addDigit('7')">7</div>
-                    <div class="key" onclick="window.addDigit('6')">6</div><div class="key" onclick="window.addDigit('5')">5</div><div class="key" onclick="window.addDigit('4')">4</div>
-                    <div class="key" onclick="window.addDigit('3')">3</div><div class="key" onclick="window.addDigit('2')">2</div><div class="key" onclick="window.addDigit('1')">1</div>
-                    <div class="key" style="background: var(--danger); color: white;" onclick="window.deleteDigit()"><i class="fas fa-backspace"></i></div>
-                    <div class="key" onclick="window.addDigit('0')">0</div>
-                    <div class="key" style="background: var(--gray); color: white;" onclick="window.clearPhone()">C</div>
+                    <div class="key" onclick="addDigit(9)">9</div><div class="key" onclick="addDigit(8)">8</div><div class="key" onclick="addDigit(7)">7</div>
+                    <div class="key" onclick="addDigit(6)">6</div><div class="key" onclick="addDigit(5)">5</div><div class="key" onclick="addDigit(4)">4</div>
+                    <div class="key" onclick="addDigit(3)">3</div><div class="key" onclick="addDigit(2)">2</div><div class="key" onclick="addDigit(1)">1</div>
+                    <div class="key" onclick="deleteDigit()">⌫</div><div class="key" onclick="addDigit(0)">0</div><div class="key" onclick="clearPhone()">C</div>
                 </div>
                 <div class="chips-wrapper"><div class="chips">
-                    <div class="chip" onclick="window.setQuickMessage('✅ تم استلام طلبك بنجاح')">📦 استلام</div>
-                    <div class="chip" onclick="window.setQuickMessage('🚚 طلبك جاهز للتسليم')">✅ جاهز</div>
-                    <div class="chip" onclick="window.setQuickMessage('🛵 المندوب في الطريق إليك')">🚚 بالطريق</div>
-                    <div class="chip" onclick="window.setQuickMessage('🎉 تم التوصيل شكراً لك')">🎁 تم التوصيل</div>
+                    <div class="chip" onclick="setMsg('✅ تم استلام طلبك')">📦 استلام</div>
+                    <div class="chip" onclick="setMsg('🚚 جاهز للتسليم')">✅ جاهز</div>
+                    <div class="chip" onclick="setMsg('🛵 المندوب في الطريق')">🚚 بالطريق</div>
+                    <div class="chip" onclick="setMsg('🎉 تم التوصيل')">🎁 تم التوصيل</div>
                 </div></div>
-                <textarea id="messageInput" placeholder="📝 رسالة مخصصة..."></textarea>
-                <div class="row-buttons">
-                    <button class="btn btn-primary" id="callBtn"><i class="fas fa-phone"></i> اتصال</button>
-                    <button class="btn btn-success" id="whatsappBtn"><i class="fab fa-whatsapp"></i> واتساب</button>
-                    <button class="btn btn-warning" id="saveContactBtn"><i class="fas fa-user-plus"></i> حفظ جهة اتصال</button>
+                <textarea id="msgInput" placeholder="رسالة مخصصة..."></textarea>
+
+                <!-- الصف الأول 4 أزرار -->
+                <div class="btn-row">
+                    <button class="btn btn-primary" id="callBtn">📞 اتصال</button>
+                    <button class="btn btn-success" id="waBtn">💬 واتساب</button>
+                    <button class="btn btn-warning" id="saveVcfBtn">💾 حفظ جهة</button>
+                    <button class="btn btn-info" id="saveHistoryBtn">📌 حفظ بالسجل</button>
                 </div>
-                <div class="row-buttons">
-                    <button class="btn btn-info" id="saveToHistoryBtn"><i class="fas fa-save"></i> حفظ في السجل</button>
-                    <button class="btn btn-secondary" id="refreshBtn"><i class="fas fa-sync-alt"></i> إعادة تحميل</button>
-                    <button class="btn btn-info" id="aboutBtn"><i class="fas fa-info-circle"></i> عن التطبيق</button>
+                <!-- الصف الثاني 4 أزرار -->
+                <div class="btn-row">
+                    <button class="btn btn-secondary" id="refreshPageBtn">🔄 إعادة تحميل</button>
+                    <button class="btn btn-info" id="aboutAppBtn">ℹ️ عن التطبيق</button>
+                    <button class="btn btn-danger" id="resetAppBtn">🗑️ جديد</button>
+                    <button class="btn btn-primary" id="ocrNowBtn">🔍 OCR الآن</button>
                 </div>
             </div>
+
             <div id="historyTab" class="tab-content">
-                <div class="history-header">
-                    <span class="history-title">📋 سجل المسح اليومي</span>
-                    <button class="clear-cache-btn" id="clearHistoryBtn"><i class="fas fa-trash"></i> مسح الكاش</button>
+                <div style="display:flex; justify-content:space-between;">
+                    <span>📋 السجل</span>
+                    <button class="btn-danger" id="clearCacheBtn" style="padding:4px 8px;">🗑️ مسح الكاش</button>
                 </div>
-                <div id="historyList" class="history-list"><div style="text-align: center; padding: 20px; color: var(--gray);">📭 لا توجد بيانات</div></div>
+                <div id="historyList" style="max-height:260px; overflow:auto;">📭 لا توجد بيانات</div>
             </div>
         </div>
-
-        <div class="footer">
-            <div class="footer-content">
-                <i class="fas fa-crown"></i>
-                <span>Almas Solutions<sup>®</sup>²⁰²⁶</span>
-                <span style="font-size: 9px; background: rgba(212,175,55,0.2); padding: 2px 6px; border-radius: 10px;">PWA</span>
-            </div>
-        </div>
+        <div class="footer">Almas Solutions®²⁰²⁶ | PWA</div>
     </div>
 </div>
 
-<div class="modal" id="aboutModal">
+<div id="aboutModal" class="modal">
     <div class="modal-content">
-        <div class="modal-header"><span class="modal-title">📱 عن OCRcall</span><button class="close-modal" onclick="document.getElementById('aboutModal').classList.remove('show')">✕</button></div>
-        <div class="modal-body">
-            <h3>🤖 ما هو تطبيق OCRcall؟</h3>
-            <p>تطبيق ذكي لتحويل الصور إلى جهات اتصال، يستخدم تقنية OCR لقراءة الأرقام والأسماء من الصور.</p>
-            <h3>⚙️ طريقة الاستخدام</h3>
-            <ul><li><strong>1.</strong> اضغط على "فتح الكاميرا" أو "رفع صورة"</li>
-            <li><strong>2.</strong> للصورة المرفوعة: استخدم أصابعك للتحريك والتكبير/التصغير</li>
-            <li><strong>3.</strong> اضغط "قراءة البيانات" لاستخراج الرقم والاسم</li>
-            <li><strong>4.</strong> يمكنك تعديل الاسم أو الرقم يدوياً</li>
-            <li><strong>5.</strong> اختر رسالة سريعة أو اكتب رسالة مخصصة</li>
-            <li><strong>6.</strong> اضغط "اتصال" أو "واتساب" أو "حفظ جهة اتصال"</li></ul>
-            <div class="developer-info"><div class="developer-name">👨‍💻 محمود عادل صالح</div><div>مطور التطبيق ومصممه</div><div style="font-size: 12px; margin-top: 5px;">Almas Solutions®²⁰²⁶</div></div>
-            <h4>📞 للإستفسارات والدعم</h4>
-            <p style="text-align: center;"><i class="fas fa-phone"></i> <span dir="ltr">01000562727</span><br><i class="fab fa-whatsapp"></i> واتساب: <span dir="ltr">01000562727</span></p>
-        </div>
+        <h3>📱 OCRcall 2026</h3>
+        <p>تطبيق لتحويل الصور إلى جهات اتصال باستخدام OCR</p>
+        <p>المطور: <strong>محمود عادل صالح</strong><br>Almas Solutions®</p>
+        <p>📞 01000562727<br>📧 (واتساب نفس الرقم)</p>
+        <button onclick="closeModal()" class="btn btn-secondary">إغلاق</button>
     </div>
 </div>
-
-<div class="loading-overlay" id="loadingOverlay"><div class="loading-content"><div class="spinner"></div><p id="loadingText">جاري التحميل...</p></div></div>
+<div class="loading" id="loading"><div class="spinner"></div></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
 <script>
-    // كل الكود بتاع الـ JavaScript زي ما هو - هاكتبه مختصر عشان المساحة
-    let mediaStream = null, torchEnabled = false, lastImageData = null, tesseractReady = false;
-    let db = null, nextId = 1, isEditingPhone = false;
-    let imgScale = 1, imgRotation = 0, imgTranslateX = 0, imgTranslateY = 0;
-    let initialDistance = 0, initialScale = 1, initialX = 0, initialY = 0;
-    let isPanning = false, lastTouchX = 0, lastTouchY = 0;
-    
+    // --------------------------------------------------------------
+    // المتغيرات العامة
+    let stream = null, torch = false, lastImageData = null, tesseractReady = false;
+    let db = null, nextId = 1, editing = false;
+    let scale = 1, rotate = 0, translateX = 0, translateY = 0;
+    let startDist = 0, startScale = 1, isPan = false, lastX=0, lastY=0, startPanX=0, startPanY=0;
+
     const video = document.getElementById('video');
-    const cameraPreview = document.getElementById('cameraPreview');
-    const focusRectangle = document.getElementById('focusRectangle');
-    const flashBtn = document.getElementById('flashBtn');
+    const cameraDiv = document.getElementById('cameraPreview');
+    const imageDiv = document.getElementById('imageContainer');
+    const uploadedImg = document.getElementById('uploaded-image');
+    const phoneSpan = document.getElementById('phoneDisplay');
+    const nameInput = document.getElementById('customerName');
+    const msgArea = document.getElementById('msgInput');
     const statusDiv = document.getElementById('status');
-    const startScreen = document.getElementById('startScreen');
-    const resultScreen = document.getElementById('resultScreen');
-    const phoneDisplay = document.getElementById('phoneNumber');
-    const customerNameInput = document.getElementById('customerName');
-    const messageInput = document.getElementById('messageInput');
-    const keyboard = document.getElementById('keyboard');
-    const editPhoneBtn = document.getElementById('editPhoneBtn');
-    const imageContainer = document.getElementById('imageContainer');
-    const uploadedImage = document.getElementById('uploaded-image');
+    const keyboardDiv = document.getElementById('keyboard');
+    const editBtn = document.getElementById('editPhoneBtn');
+    const loadingDiv = document.getElementById('loading');
     
-    function togglePhoneEditing() {
-        isEditingPhone = !isEditingPhone;
-        if(isEditingPhone) { keyboard.classList.add('show'); phoneDisplay.classList.add('editing'); editPhoneBtn.classList.add('active'); editPhoneBtn.innerHTML = '<i class="fas fa-check"></i>';
-        } else { keyboard.classList.remove('show'); phoneDisplay.classList.remove('editing'); editPhoneBtn.classList.remove('active'); editPhoneBtn.innerHTML = '<i class="fas fa-edit"></i>'; }
+    // فتح IndexedDB
+    function openDB() {
+        return new Promise((res) => {
+            let req = indexedDB.open('OCRcallDB', 1);
+            req.onupgradeneeded = (e) => {
+                let db = e.target.result;
+                if(!db.objectStoreNames.contains('scans'))
+                    db.createObjectStore('scans', {keyPath:'id', autoIncrement:true}).createIndex('date','date');
+            };
+            req.onsuccess = () => { db = req.result; res(); };
+        });
     }
-    phoneDisplay.onclick = togglePhoneEditing;
-    editPhoneBtn.onclick = (e) => { e.stopPropagation(); togglePhoneEditing(); };
-    
-    function updateImageTransform() { uploadedImage.style.transform = `translate(${imgTranslateX}px, ${imgTranslateY}px) scale(${imgScale}) rotate(${imgRotation}deg)`; }
-    function resetImageTransform() { imgScale = 1; imgRotation = 0; imgTranslateX = 0; imgTranslateY = 0; updateImageTransform(); }
-    function zoomIn() { imgScale = Math.min(imgScale + 0.2, 5); updateImageTransform(); }
-    function zoomOut() { imgScale = Math.max(imgScale - 0.2, 0.5); updateImageTransform(); }
-    function rotateLeft() { imgRotation -= 90; updateImageTransform(); }
-    function rotateRight() { imgRotation += 90; updateImageTransform(); }
-    
-    function setupImageGestures() {
-        uploadedImage.addEventListener('touchstart', (e) => { e.preventDefault(); const t = e.touches; if(t.length===1) { isPanning=true; lastTouchX=t[0].clientX; lastTouchY=t[0].clientY; initialX=imgTranslateX; initialY=imgTranslateY; }
-        else if(t.length===2) { const dx=t[0].clientX-t[1].clientX, dy=t[0].clientY-t[1].clientY; initialDistance=Math.hypot(dx,dy); initialScale=imgScale; } }, {passive:false});
-        uploadedImage.addEventListener('touchmove', (e) => { e.preventDefault(); const t=e.touches; if(t.length===1&&isPanning) { imgTranslateX=initialX+(t[0].clientX-lastTouchX); imgTranslateY=initialY+(t[0].clientY-lastTouchY); updateImageTransform(); }
-        else if(t.length===2) { const dx=t[0].clientX-t[1].clientX, dy=t[0].clientY-t[1].clientY; const d=Math.hypot(dx,dy); if(initialDistance>0) { imgScale=Math.min(Math.max(initialScale*(d/initialDistance),0.5),5); updateImageTransform(); } } }, {passive:false});
-        uploadedImage.addEventListener('touchend', () => { isPanning=false; initialDistance=0; });
+
+    function saveToHistory(name, phone, msg) {
+        if(!phone) return;
+        let scan = { id: nextId++, name: name||'عميل', phone, message: msg||'', date: new Date().toISOString(), dateFormatted: new Date().toLocaleString('ar-EG') };
+        let tx = db.transaction(['scans'], 'readwrite');
+        tx.objectStore('scans').add(scan).onsuccess = () => { statusDiv.innerText = '✅ حفظ بالسجل'; loadHistory(); };
     }
+
+    function loadHistory() {
+        if(!db) return;
+        let scans = [];
+        let tx = db.transaction(['scans'], 'readonly');
+        tx.objectStore('scans').index('date').openCursor(null, 'prev').onsuccess = (e) => {
+            let c = e.target.result;
+            if(c) { scans.push(c.value); c.continue(); }
+            else displayHistory(scans);
+        };
+    }
+    function displayHistory(scans) {
+        let container = document.getElementById('historyList');
+        if(scans.length===0) { container.innerHTML = '📭 لا توجد بيانات'; return; }
+        container.innerHTML = scans.map(s => `<div class="history-item" onclick="loadFromHistory(${s.id})">
+            <b>#${s.id}</b> <b>${escapeHtml(s.name)}</b><br>📞 ${s.phone}<br>💬 ${escapeHtml(s.message?.substring(0,40)||'')}<br>📅 ${s.dateFormatted}</div>`).join('');
+    }
+    window.loadFromHistory = (id) => {
+        let tx = db.transaction(['scans'], 'readonly');
+        tx.objectStore('scans').get(id).onsuccess = (e) => {
+            let d = e.target.result;
+            if(d) {
+                nameInput.value = d.name;
+                phoneSpan.innerText = d.phone;
+                msgArea.value = d.message||'';
+                statusDiv.innerText = '✅ تم تحميل من السجل';
+                document.querySelector('.tab[data-tab="main"]').click();
+            }
+        };
+    };
+    function clearCache() {
+        if(confirm('⚠️ مسح كل السجل؟')) {
+            let tx = db.transaction(['scans'], 'readwrite');
+            tx.objectStore('scans').clear().onsuccess = () => { nextId=1; loadHistory(); statusDiv.innerText='🗑️ تم مسح الكاش'; };
+        }
+    }
+
+    // OCR
+    async function runOCR(imageSrc) {
+        if(!tesseractReady) { statusDiv.innerText = '⏳ OCR قيد التحميل...'; return; }
+        statusDiv.innerText = '⏳ جاري قراءة الصورة...';
+        document.getElementById('retryBtn').style.display = 'none';
+        let timeout = setTimeout(() => { statusDiv.innerText = '⚠️ الوقت انتهى، أدخل يدوياً'; document.getElementById('retryBtn').style.display='block'; }, 7000);
+        try {
+            loadingDiv.style.display = 'flex';
+            let { data: { text } } = await Tesseract.recognize(imageSrc, 'ara+eng');
+            loadingDiv.style.display = 'none';
+            clearTimeout(timeout);
+            let phoneMatch = text.match(/01[0125][0-9]{8}/);
+            let phone = phoneMatch ? phoneMatch[0] : '';
+            let lines = text.split('\n');
+            let name = lines.find(l => l.trim().length>2 && l.trim().length<30 && !/[0-9]/.test(l)) || '';
+            if(phone) { phoneSpan.innerText = phone; statusDiv.innerText = '✅ تم العثور على الرقم'; keyboardDiv.classList.remove('show'); editing=false; editBtn.classList.remove('active'); editBtn.innerText='✏️'; }
+            else { phoneSpan.innerText = ''; statusDiv.innerText = '⚠️ لم يُعثر على رقم'; document.getElementById('retryBtn').style.display='block'; }
+            if(name) nameInput.value = name.trim();
+        } catch(e) { loadingDiv.style.display='none'; statusDiv.innerText='❌ فشل OCR'; document.getElementById('retryBtn').style.display='block'; }
+    }
+
+    // التعامل مع الصورة المرفوعة (تحريك + تكبير + دوران 10°)
+    function updateImgTransform() { uploadedImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale}) rotate(${rotate}deg)`; }
+    function resetImg() { scale=1; rotate=0; translateX=0; translateY=0; updateImgTransform(); }
+    function zoomIn() { scale = Math.min(scale+0.2, 4); updateImgTransform(); }
+    function zoomOut() { scale = Math.max(scale-0.2, 0.5); updateImgTransform(); }
+    function rotateLeft10() { rotate -= 10; updateImgTransform(); }
+    function rotateRight10() { rotate += 10; updateImgTransform(); }
     
-    function openDatabase() { return new Promise((resolve) => { const r=indexedDB.open('OCRcallDB',1); r.onsuccess=()=>{ db=r.result; resolve(); }; r.onupgradeneeded=(e)=>{ e.target.result.createObjectStore('scans',{keyPath:'id',autoIncrement:true}).createIndex('date','date'); }; }); }
-    async function saveScan(name,phone,message) { if(!phone) return; const scan={id:nextId++, name:name||'عميل', phone, message:message||'', date:new Date().toISOString(), dateFormatted:new Date().toLocaleString('ar-EG')}; db.transaction(['scans'],'readwrite').objectStore('scans').add(scan).onsuccess=()=>{ statusDiv.innerHTML='✅ تم حفظ البيانات'; loadHistory(); }; }
-    async function loadHistory() { if(!db) return; const scans=[]; db.transaction(['scans'],'readonly').objectStore('scans').index('date').openCursor(null,'prev').onsuccess=(e)=>{ const c=e.target.result; if(c){ scans.push(c.value); c.continue(); } else displayHistory(scans); }; }
-    function displayHistory(scans) { const h=document.getElementById('historyList'); if(!h) return; if(scans.length===0) h.innerHTML='<div style="text-align:center;padding:20px">📭 لا توجد بيانات</div>'; else h.innerHTML=scans.map(s=>`<div class="history-item" onclick="window.loadScanToMain(${s.id})"><div><span class="history-number">#${s.id}</span><span class="history-name">${escapeHtml(s.name)}</span></div><div class="history-phone">📞 ${s.phone}</div>${s.message?`<div class="history-message">💬 ${escapeHtml(s.message.substring(0,50))}</div>`:''}<div class="history-date">📅 ${s.dateFormatted}</div></div>`).join(''); }
-    window.loadScanToMain=function(id){ db.transaction(['scans'],'readonly').objectStore('scans').get(id).onsuccess=(e)=>{ const s=e.target.result; if(s){ customerNameInput.value=s.name; phoneDisplay.innerText=s.phone; messageInput.value=s.message||''; statusDiv.innerHTML='✅ تم التحميل'; document.querySelector('.tab[data-tab="main"]').click(); } }; };
-    async function clearAllCache() { if(confirm('⚠️ هل أنت متأكد؟')) db.transaction(['scans'],'readwrite').objectStore('scans').clear().onsuccess=()=>{ nextId=1; loadHistory(); statusDiv.innerHTML='🗑️ تم مسح الكاش'; }; }
-    function showError(m) { const e=document.getElementById('errorMessage'); e.style.display='block'; e.innerHTML=`⚠️ ${m}`; setTimeout(()=>{ e.style.display='none'; },3000); }
-    function arabicToEnglish(s){ return s.replace(/[٠-٩]/g,d=>"٠١٢٣٤٥٦٧٨٩".indexOf(d)); }
-    function extractPhoneNumber(t){ const m=arabicToEnglish(t.replace(/[\s\-\(\)]/g,'')).match(/01[0125][0-9]{8}/); return m?m[0]:''; }
-    function extractName(t){ const l=t.split('\n'); for(let line of l){ line=line.trim(); if(line.length>2&&line.length<30&&!/[0-9]/.test(line)) return line; } return ''; }
-    function showLoading(s,t){ const l=document.getElementById('loadingOverlay'); if(s){ document.getElementById('loadingText').textContent=t; l.style.display='flex'; } else l.style.display='none'; }
-    async function performOCR(imageData){ if(!tesseractReady){ showError('محرك OCR قيد التحميل'); return; } statusDiv.innerHTML='⏳ جاري القراءة...'; document.getElementById('retryOcrBtn').style.display='none'; let timeout=setTimeout(()=>{ if(statusDiv.innerHTML!=='✅ تم القراءة'){ statusDiv.innerHTML='⚠️ انتهى الوقت، أدخل يدوياً'; document.getElementById('retryOcrBtn').style.display='block'; } },8000); try{ showLoading(true,'جاري معالجة الصورة...'); const {data:{text}}=await Tesseract.recognize(imageData,'ara+eng'); clearTimeout(timeout); showLoading(false); const phone=extractPhoneNumber(text); const name=extractName(text); if(phone){ phoneDisplay.innerText=phone; statusDiv.innerHTML='✅ تم العثور على الرقم'; }else{ phoneDisplay.innerText=''; statusDiv.innerHTML='⚠️ لم يتم العثور على رقم'; document.getElementById('retryOcrBtn').style.display='block'; } if(name) customerNameInput.value=name; }catch(e){ clearTimeout(timeout); showLoading(false); statusDiv.innerHTML='❌ فشل القراءة'; document.getElementById('retryOcrBtn').style.display='block'; showError('حدث خطأ'); } }
-    async function processUploadedImage(){ if(!uploadedImage.src||uploadedImage.src===window.location.href){ showError('لم يتم تحميل صورة'); return; } showLoading(true,'جاري معالجة الصورة...'); try{ const {data:{text}}=await Tesseract.recognize(uploadedImage.src,'ara+eng'); showLoading(false); const phone=extractPhoneNumber(text); const name=extractName(text); if(phone){ phoneDisplay.innerText=phone; statusDiv.innerHTML='✅ تم العثور على الرقم'; }else{ phoneDisplay.innerText=''; statusDiv.innerHTML='⚠️ لم يتم العثور على رقم'; document.getElementById('retryOcrBtn').style.display='block'; } if(name) customerNameInput.value=name; }catch(e){ showLoading(false); statusDiv.innerHTML='❌ فشل القراءة'; showError('حدث خطأ'); } }
-    async function startCamera(){ try{ const s=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}}); mediaStream=s; video.srcObject=s; video.style.display='block'; cameraPreview.style.display='block'; imageContainer.style.display='none'; focusRectangle.style.display='block'; if(s.getVideoTracks()[0].getCapabilities().torch) flashBtn.style.display='flex'; document.getElementById('cameraBtn').innerHTML='📸 التقاط صورة'; document.getElementById('cameraBtn').onclick=capturePhoto; statusDiv.innerHTML='📷 الكاميرا جاهزة'; }catch(e){ statusDiv.innerHTML='❌ لا يمكن الوصول للكاميرا'; showError('صلاحية الكاميرا مطلوبة'); } }
-    function capturePhoto(){ if(!video.videoWidth){ showError('الكاميرا غير جاهزة'); return; } const c=document.createElement('canvas'); c.width=video.videoWidth; c.height=video.videoHeight; c.getContext('2d').drawImage(video,0,0); if(mediaStream){ mediaStream.getTracks().forEach(t=>t.stop()); mediaStream=null; } const imgData=c.toDataURL('image/png'); lastImageData=imgData; cameraPreview.style.display='none'; startScreen.style.display='none'; resultScreen.style.display='flex'; performOCR(imgData); }
-    function handleImageUpload(file){ if(!file) return; const r=new FileReader(); r.onload=(e)=>{ uploadedImage.src=e.target.result; resetImageTransform(); cameraPreview.style.display='none'; imageContainer.style.display='block'; focusRectangle.style.display='none'; startScreen.style.display='none'; resultScreen.style.display='flex'; statusDiv.innerHTML='👆 يمكنك تحريك الصورة وتكبيرها ثم اضغط قراءة البيانات'; if(!document.getElementById('processImageBtn')){ const b=document.createElement('button'); b.id='processImageBtn'; b.className='btn btn-success'; b.innerHTML='🔍 قراءة البيانات'; b.onclick=processUploadedImage; document.getElementById('mainTab').insertBefore(b,document.getElementById('mainTab').firstChild); } else document.getElementById('processImageBtn').style.display='flex'; }; r.readAsDataURL(file); }
-    async function toggleFlash(){ if(!mediaStream) return; const t=mediaStream.getVideoTracks()[0]; torchEnabled=!torchEnabled; await t.applyConstraints({advanced:[{torch:torchEnabled}]}); flashBtn.style.background=torchEnabled?'var(--warning)':'rgba(0,0,0,0.7)'; }
-    window.addDigit=function(d){ if(isEditingPhone&&phoneDisplay.innerText.length<11) phoneDisplay.innerText+=d; };
-    window.deleteDigit=function(){ if(isEditingPhone) phoneDisplay.innerText=phoneDisplay.innerText.slice(0,-1); };
-    window.clearPhone=function(){ if(isEditingPhone) phoneDisplay.innerText=''; };
-    window.setQuickMessage=function(m){ messageInput.value=m; };
-    function resetApp(){ if(mediaStream){ mediaStream.getTracks().forEach(t=>t.stop()); mediaStream=null; } cameraPreview.style.display='block'; imageContainer.style.display='none'; focusRectangle.style.display='block'; video.style.display='block'; startScreen.style.display='flex'; resultScreen.style.display='none'; statusDiv.innerHTML='✅ جاهز للاستخدام'; document.getElementById('cameraBtn').innerHTML='📷 فتح الكاميرا'; document.getElementById('cameraBtn').onclick=startCamera; flashBtn.style.display='none'; torchEnabled=false; phoneDisplay.innerText=''; customerNameInput.value=''; messageInput.value=''; isEditingPhone=false; keyboard.classList.remove('show'); editPhoneBtn.classList.remove('active'); editPhoneBtn.innerHTML='✏️'; const pb=document.getElementById('processImageBtn'); if(pb) pb.style.display='none'; }
-    function updateOfflineStatus(){ document.getElementById('offlineIndicator').classList.toggle('show',!navigator.onLine); }
-    async function initTesseract(){ showLoading(true,'جاري تحميل OCR...'); try{ await Tesseract.createWorker('ara+eng'); tesseractReady=true; showLoading(false); statusDiv.innerHTML='✅ جاهز - يمكنك البدء'; }catch(e){ showLoading(false); statusDiv.innerHTML='⚠️ وضع الإدخال اليدوي'; tesseractReady=false; } }
-    function escapeHtml(t){ const d=document.createElement('div'); d.textContent=t; return d.innerHTML; }
+    function setupTouch() {
+        uploadedImg.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            let t = e.touches;
+            if(t.length===1) { isPan=true; lastX=t[0].clientX; lastY=t[0].clientY; startPanX=translateX; startPanY=translateY; }
+            else if(t.length===2) { let dx=t[0].clientX-t[1].clientX, dy=t[0].clientY-t[1].clientY; startDist=Math.hypot(dx,dy); startScale=scale; }
+        });
+        uploadedImg.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            let t = e.touches;
+            if(t.length===1 && isPan) {
+                let dx = t[0].clientX - lastX;
+                let dy = t[0].clientY - lastY;
+                translateX = startPanX + dx;
+                translateY = startPanY + dy;
+                updateImgTransform();
+            } else if(t.length===2) {
+                let dx=t[0].clientX-t[1].clientX, dy=t[0].clientY-t[1].clientY;
+                let dist = Math.hypot(dx,dy);
+                if(startDist>0) { scale = Math.min(Math.max(startScale * (dist/startDist), 0.5),4); updateImgTransform(); }
+            }
+        });
+        uploadedImg.addEventListener('touchend', () => { isPan=false; });
+    }
+
+    // كاميرا
+    async function startCamera() {
+        try {
+            let s = await navigator.mediaDevices.getUserMedia({ video: { facingMode:'environment' } });
+            stream = s;
+            video.srcObject = s;
+            cameraDiv.style.display = 'block';
+            imageDiv.style.display = 'none';
+            document.querySelector('.focus-rectangle').style.display = 'block';
+            let track = s.getVideoTracks()[0];
+            if(track.getCapabilities().torch) document.getElementById('flashBtn').style.display='flex';
+            document.getElementById('cameraBtn').innerHTML = '📸 التقاط صورة';
+            document.getElementById('cameraBtn').onclick = capturePhoto;
+            statusDiv.innerText = '📷 الكاميرا جاهزة';
+        } catch(e) { statusDiv.innerText = '❌ لا يمكن الوصول للكاميرا'; }
+    }
+    function capturePhoto() {
+        let canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+        if(stream) stream.getTracks().forEach(t=>t.stop());
+        let imgData = canvas.toDataURL('image/png');
+        lastImageData = imgData;
+        cameraDiv.style.display = 'none';
+        document.getElementById('startScreen').style.display = 'none';
+        document.getElementById('resultScreen').style.display = 'flex';
+        runOCR(imgData);
+    }
+    function handleUpload(file) {
+        let reader = new FileReader();
+        reader.onload = (e) => {
+            uploadedImg.src = e.target.result;
+            resetImg();
+            cameraDiv.style.display = 'none';
+            imageDiv.style.display = 'block';
+            document.querySelector('.focus-rectangle').style.display = 'none';
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('resultScreen').style.display = 'flex';
+            statusDiv.innerText = '👆 يمكنك تحريك/تكبير/تدوير الصورة ثم اضغط OCR الآن';
+            if(!document.getElementById('ocrNowBtn').onclick) document.getElementById('ocrNowBtn').onclick = () => runOCR(uploadedImg.src);
+        };
+        reader.readAsDataURL(file);
+    }
+
+    // دوال مساعدة
+    function addDigit(d) { if(editing && phoneSpan.innerText.length<11) phoneSpan.innerText += d; }
+    function deleteDigit() { if(editing) phoneSpan.innerText = phoneSpan.innerText.slice(0,-1); }
+    function clearPhone() { if(editing) phoneSpan.innerText = ''; }
+    function setMsg(m) { msgArea.value = m; }
+    function toggleEdit() { editing = !editing; if(editing) { keyboardDiv.classList.add('show'); phoneSpan.classList.add('editing'); editBtn.classList.add('active'); editBtn.innerText='✔️'; } else { keyboardDiv.classList.remove('show'); phoneSpan.classList.remove('editing'); editBtn.classList.remove('active'); editBtn.innerText='✏️'; } }
+    function resetApp() { if(stream) stream.getTracks().forEach(t=>t.stop()); cameraDiv.style.display='block'; imageDiv.style.display='none'; document.querySelector('.focus-rectangle').style.display='block'; document.getElementById('startScreen').style.display='flex'; document.getElementById('resultScreen').style.display='none'; phoneSpan.innerText=''; nameInput.value=''; msgArea.value=''; editing=false; keyboardDiv.classList.remove('show'); editBtn.classList.remove('active'); editBtn.innerText='✏️'; document.getElementById('cameraBtn').innerHTML='📷 فتح الكاميرا'; document.getElementById('cameraBtn').onclick=startCamera; statusDiv.innerText='✅ جاهز'; }
+    function closeModal() { document.getElementById('aboutModal').classList.remove('show'); }
     
-    document.getElementById('aboutBtn').onclick=()=>document.getElementById('aboutModal').classList.add('show');
-    document.getElementById('aboutModal').onclick=(e)=>{ if(e.target===document.getElementById('aboutModal')) document.getElementById('aboutModal').classList.remove('show'); };
-    document.querySelectorAll('.tab').forEach(t=>{ t.addEventListener('click',()=>{ const n=t.dataset.tab; document.querySelectorAll('.tab').forEach(tab=>tab.classList.remove('active')); document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active')); t.classList.add('active'); document.getElementById(`${n}Tab`).classList.add('active'); if(n==='history') loadHistory(); }); });
-    document.getElementById('callBtn').onclick=()=>{ const p=phoneDisplay.innerText; if(p&&p.length>=10) window.location.href=`tel:${p}`; else showError('رقم غير صحيح'); };
-    document.getElementById('whatsappBtn').onclick=()=>{ const p=phoneDisplay.innerText; const m=messageInput.value||'مرحباً'; if(p&&p.length>=10) window.open(`https://wa.me/2${p}?text=${encodeURIComponent(m)}`); else showError('رقم غير صحيح'); };
-    document.getElementById('saveContactBtn').onclick=()=>{ const n=customerNameInput.value||'عميل'; const p=phoneDisplay.innerText; if(!p||p.length<10){ showError('لا يوجد رقم صحيح'); return; } const vcf=`BEGIN:VCARD\nVERSION:3.0\nFN:${n}\nTEL;TYPE=CELL:${p}\nEND:VCARD`; const b=new Blob([vcf],{type:'text/vcard'}); const u=URL.createObjectURL(b); const a=document.createElement('a'); a.href=u; a.download=`${n}.vcf`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(u); statusDiv.innerHTML='✅ تم حفظ جهة الاتصال'; };
-    document.getElementById('saveToHistoryBtn').onclick=async()=>{ await saveScan(customerNameInput.value,phoneDisplay.innerText,messageInput.value); };
-    document.getElementById('clearHistoryBtn').onclick=clearAllCache;
-    document.getElementById('refreshBtn').onclick=()=>location.reload();
-    document.getElementById('retryOcrBtn').onclick=()=>{ if(lastImageData) performOCR(lastImageData); };
-    document.getElementById('imageUpload').onchange=(e)=>{ const f=e.target.files[0]; if(f) handleImageUpload(f); };
-    flashBtn.onclick=toggleFlash;
-    document.getElementById('cameraBtn').onclick=startCamera;
-    document.getElementById('zoomInBtn').onclick=zoomIn;
-    document.getElementById('zoomOutBtn').onclick=zoomOut;
-    document.getElementById('rotateLeftBtn').onclick=rotateLeft;
-    document.getElementById('rotateRightBtn').onclick=rotateRight;
-    document.getElementById('resetImageBtn').onclick=resetImageTransform;
-    setupImageGestures();
+    // أحداث
+    window.addDigit = addDigit; window.deleteDigit = deleteDigit; window.clearPhone = clearPhone; window.setMsg = setMsg;
+    editBtn.onclick = toggleEdit;
+    phoneSpan.onclick = toggleEdit;
+    document.getElementById('cameraBtn').onclick = startCamera;
+    document.getElementById('fileUp').onchange = (e) => { if(e.target.files[0]) handleUpload(e.target.files[0]); };
+    document.getElementById('callBtn').onclick = () => { let p=phoneSpan.innerText; if(p.length>=10) window.location.href=`tel:${p}`; else statusDiv.innerText='⚠️ رقم غير صحيح'; };
+    document.getElementById('waBtn').onclick = () => { let p=phoneSpan.innerText; if(p.length>=10) window.open(`https://wa.me/2${p}?text=${encodeURIComponent(msgArea.value)}`); };
+    document.getElementById('saveVcfBtn').onclick = () => { let n=nameInput.value||'عميل', p=phoneSpan.innerText; if(!p) return; let vcf=`BEGIN:VCARD\nVERSION:3.0\nFN:${n}\nTEL:${p}\nEND:VCARD`; let blob=new Blob([vcf],{type:'text/vcard'}); let a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`${n}.vcf`; a.click(); URL.revokeObjectURL(a.href); statusDiv.innerText='✅ تم حفظ جهة الاتصال'; };
+    document.getElementById('saveHistoryBtn').onclick = () => saveToHistory(nameInput.value, phoneSpan.innerText, msgArea.value);
+    document.getElementById('refreshPageBtn').onclick = () => location.reload();
+    document.getElementById('aboutAppBtn').onclick = () => document.getElementById('aboutModal').classList.add('show');
+    document.getElementById('resetAppBtn').onclick = resetApp;
+    document.getElementById('clearCacheBtn').onclick = clearCache;
+    document.getElementById('retryBtn').onclick = () => { if(lastImageData) runOCR(lastImageData); };
+    document.getElementById('ocrNowBtn').onclick = () => { if(uploadedImg.src) runOCR(uploadedImg.src); };
+    document.getElementById('flashBtn').onclick = async () => { if(stream) { torch=!torch; await stream.getVideoTracks()[0].applyConstraints({advanced:[{torch:torch}]}); } };
+    document.getElementById('zoomIn').onclick = zoomIn;
+    document.getElementById('zoomOut').onclick = zoomOut;
+    document.getElementById('rotateLeft10').onclick = rotateLeft10;
+    document.getElementById('rotateRight10').onclick = rotateRight10;
+    document.getElementById('resetImg').onclick = resetImg;
+    setupTouch();
     
-    window.addEventListener('online',updateOfflineStatus);
-    window.addEventListener('offline',updateOfflineStatus);
-    if('serviceWorker' in navigator){ window.addEventListener('load',()=>{ navigator.serviceWorker.register('sw.js').catch(e=>console.log(e)); }); }
+    // Tabs
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            let name = tab.dataset.tab;
+            document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+            tab.classList.add('active');
+            document.getElementById(`${name}Tab`).classList.add('active');
+            if(name==='history') loadHistory();
+        });
+    });
     
-    async function init(){ await openDatabase(); await loadHistory(); updateOfflineStatus(); initTesseract(); }
+    async function init() {
+        await openDB();
+        loadHistory();
+        try { await Tesseract.createWorker('ara+eng'); tesseractReady=true; statusDiv.innerText='✅ OCR جاهز'; } catch(e) { statusDiv.innerText='⚠️ OCR غير متاح، إدخال يدوي'; }
+    }
     init();
 </script>
 </body>
