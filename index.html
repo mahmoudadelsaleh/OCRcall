@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>OCR Call - Almas Solutions</title>
+    <title>OCR Pro - Almas Solutions</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#000000">
-    
     <script src="tesseract.min.js"></script>
     <link rel="stylesheet" href="cropper.min.css">
     <script src="cropper.min.js"></script>
@@ -16,19 +15,23 @@
         html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; background: var(--bg); font-family: sans-serif; }
         .main-wrapper { display: flex; flex-direction: column; height: 100vh; max-width: 500px; margin: auto; background: white; position: relative; }
         #preview-box { flex: 0 0 35%; background: #000; position: relative; overflow: hidden; transition: flex 0.4s ease; border-bottom: 2px solid var(--gold); }
-        #preview-box.compact { flex: 0 0 20%; }
+        #preview-box.compact { flex: 0 0 18%; }
         #video, #image-to-crop { position: absolute; top: 0; right: 0; width: 100%; height: 100%; object-fit: contain; }
         .focus-frame { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 70%; height: 120px; border: 2px solid var(--warning); box-shadow: 0 0 0 1000px rgba(0,0,0,0.5); z-index: 5; pointer-events: none; display: none; border-radius: 12px; }
         .controls-section { flex: 1; padding: 10px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding-bottom: 70px; }
-        .btn { width: 100%; padding: 12px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn { width: 100%; padding: 12px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 5px; }
         .btn-primary { background: var(--primary); color: white; }
         .btn-success { background: var(--success); color: white; }
         .btn-danger { background: var(--danger); color: white; }
         .btn-warning { background: var(--warning); color: white; }
+        
+        /* الزرين المتجاورين */
+        .ocr-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 95%; margin-top: 10px; }
+        
         .action-grid-custom { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; margin-top: 10px; }
         .right-side, .left-side { display: flex; flex-direction: column; gap: 8px; }
         .edit-field { width: 95%; padding: 10px; border: 2px solid #ddd; border-radius: 10px; margin: 5px 0; text-align: center; font-size: 18px; background: #fffbe6; }
-        .phone-val { font-size: 28px; font-weight: bold; color: #d32f2f; margin: 5px 0; border: 2px dashed var(--primary); padding: 5px; border-radius: 10px; width: 90%; text-align: center;}
+        .phone-val { font-size: 30px; font-weight: bold; color: #d32f2f; margin: 5px 0; border: 2px dashed var(--primary); padding: 5px; border-radius: 10px; width: 90%; text-align: center;}
         .mini-keyboard { display: none; grid-template-columns: repeat(3, 1fr); gap: 5px; background: #eee; padding: 10px; border-radius: 12px; margin: 8px auto; width: 220px; }
         .key { background: white; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 18px; text-align: center; cursor: pointer; box-shadow: 0 2px 0 #bbb; }
         .chips-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; margin: 8px 0; width: 100%; }
@@ -48,7 +51,7 @@
     </div>
 
     <div class="controls-section">
-        <div id="status" style="font-size:12px; font-weight:bold; color:var(--primary); margin-bottom:5px;">جاري تشغيل النظام...</div>
+        <div id="status" style="font-size:12px; font-weight:bold; color:var(--primary); margin-bottom:5px;"></div>
 
         <div id="init-btns" style="width:100%; display:flex; flex-direction:column; gap:10px;">
             <button class="btn btn-primary" id="btn-camera">📸 فتح الكاميرا</button>
@@ -57,9 +60,12 @@
         </div>
 
         <div id="crop-btns" style="display:none; width:100%; text-align:center;">
-            <input type="range" id="rot-slider" min="-180" max="180" step="1" value="0" style="width:90%; margin: 10px 0;">
-            <button class="btn btn-success" id="btn-ocr">🔍 قراءة فورية</button>
-            <button class="btn btn-danger" onclick="location.reload()">🔄 إلغاء</button>
+            <input type="range" id="rot-slider" min="-180" max="180" step="1" value="0" style="width:90%; margin: 5px 0;">
+            <div class="ocr-grid">
+                <button class="btn btn-success" id="btn-ocr-off">🌐 أوفلاين</button>
+                <button class="btn btn-primary" id="btn-ocr-on" style="background:#673ab7;">🚀 أونلاين</button>
+            </div>
+            <button class="btn btn-danger" style="margin-top:10px" onclick="location.reload()">🔄 إلغاء</button>
         </div>
 
         <div id="result-ui" style="display:none; width:100%; text-align:center;">
@@ -80,7 +86,7 @@
             </div>
         </div>
     </div>
-    <div class="footer-brand">Almas Solutions®²⁰²⁶ </div>
+    <div class="footer-brand">Almas Solutions®²٠٢٦</div>
 </div>
 
 <script>
@@ -89,11 +95,10 @@
     const phoneDisp = document.getElementById('phone-display'), nameInput = document.getElementById('name-input');
     const msgText = document.getElementById('msg-text'), chipsDiv = document.getElementById('chips');
     const flashBtn = document.getElementById('flash-toggle'), focusFrame = document.getElementById('focus-frame'), previewBox = document.getElementById('preview-box'), statusTxt = document.getElementById('status');
-    const savedMsgs = ["الدليفري في الطريق.", "الطلب جاهز للاستلام.", "يرجى الرد لتحديد الموقع."];
+    const savedMsgs = ["الدليفري في الطريق.", "الطلب جاهز للاستلام."];
 
     function arToEn(str) { return str.replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d)); }
 
-    // تحميل المحرك مرة واحدة عند فتح الصفحة لضمان السرعة
     async function initWorker() {
         try {
             worker = await Tesseract.createWorker({
@@ -103,8 +108,9 @@
             });
             await worker.loadLanguage('ara+eng');
             await worker.initialize('ara+eng');
+            await worker.setParameters({ tessedit_char_whitelist: '0123456789٠١٢٣٤٥٦٧٨٩' });
             statusTxt.innerText = "جاهز ✅";
-        } catch (e) { statusTxt.innerText = "خطأ في تحميل الملفات المحلية ❌"; }
+        } catch (e) { statusTxt.innerText = "أوفلاين غير متاح ❌"; }
     }
     window.onload = initWorker;
 
@@ -123,7 +129,7 @@
                 stream.getTracks().forEach(t => t.stop());
                 vid.style.display = "none"; focusFrame.style.display = "none"; flashBtn.style.display = "none";
             };
-        } catch(e) { alert("صلاحية الكاميرا مطلوبة"); }
+        } catch(e) { alert("صلاحية الكاميرا!"); }
     };
 
     flashBtn.onclick = () => { flashOn = !flashOn; track.applyConstraints({ advanced: [{ torch: flashOn }] }); };
@@ -149,24 +155,52 @@
 
     document.getElementById('rot-slider').oninput = function() { let val = parseInt(this.value); cropper.rotate(val - currentRot); currentRot = val; };
 
-    document.getElementById('btn-ocr').onclick = async () => {
-        if (!worker) { alert("المحرك لا يزال يحمل الملفات.."); return; }
+    // القراءة أوفلاين (Tesseract)
+    document.getElementById('btn-ocr-off').onclick = async () => {
+        if (!worker) { alert("المحرك لم يحمل بعد!"); return; }
         const canvas = cropper.getCroppedCanvas();
-        statusTxt.innerText = "جاري التحليل... ⚡";
+        statusTxt.innerText = "تحليل أوفلاين... ⚡";
         previewBox.classList.add('compact');
-
         const { data: { text } } = await worker.recognize(canvas.toDataURL());
+        showResult(text);
+    };
+
+    // القراءة أونلاين (Free API - لضمان السرعة)
+    document.getElementById('btn-ocr-on').onclick = async () => {
+        const canvas = cropper.getCroppedCanvas();
+        statusTxt.innerText = "تحليل أونلاين سريع... 🚀";
+        previewBox.classList.add('compact');
+        
+        const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg'));
+        const formData = new FormData();
+        formData.append('file', blob);
+        
+        try {
+            // استخدام محرك OCR أونلاين مجاني وسريع جداً
+            const resp = await fetch('https://api.ocr.space/parse/image', {
+                method: 'POST',
+                headers: { 'apikey': 'K88536968888957' }, // مفتاح مجاني عام
+                body: formData
+            });
+            const data = await resp.json();
+            const text = data.ParsedResults[0].ParsedText;
+            showResult(text);
+        } catch (e) {
+            statusTxt.innerText = "فشل الأونلاين، جرب الأوفلاين ❌";
+        }
+    };
+
+    function showResult(text) {
         let cleanText = arToEn(text.replace(/[^0-9٠-٩]/g, ''));
         const p = cleanText.match(/01[0125][0-9]{8}/);
-        
-        phoneDisp.innerText = p ? p[0] : "لم يتم العثور على رقم";
-        nameInput.value = text.split('\n')[0].trim() || "عميل";
+        phoneDisp.innerText = p ? p[0] : "لم يعثر على رقم";
+        nameInput.value = "عميل";
         document.getElementById('result-ui').style.display = "block";
         document.getElementById('crop-btns').style.display = "none";
         statusTxt.innerText = "";
-        img.src = canvas.toDataURL();
+        img.src = cropper.getCroppedCanvas().toDataURL();
         cropper.destroy();
-    };
+    }
 
     function toggleKB() { const kb = document.getElementById('mini-kb'); kb.style.display = (kb.style.display === 'grid') ? 'none' : 'grid'; }
     window.press = (v) => { if (v === 'C') phoneDisp.innerText = ''; else if (v === 'X') phoneDisp.innerText = phoneDisp.innerText.slice(0, -1); else if (phoneDisp.innerText.length < 11) phoneDisp.innerText += v; };
