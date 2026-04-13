@@ -24,18 +24,14 @@
 
         :root {
             --primary: #007AFF;
-            --primary-dark: #0056b3;
             --success: #34C759;
-            --success-dark: #28a745;
             --danger: #FF3B30;
-            --danger-dark: #dc3545;
             --warning: #FF9500;
             --dark: #1C1C1E;
             --gray: #8E8E93;
             --light-gray: #F2F2F7;
             --gold: #D4AF37;
-            --gold-dark: #B8960F;
-            --brown-dark: #5D4037; /* اللون البني الغامق للأرقام */
+            --brown-dark: #5D4037;
         }
 
         body {
@@ -76,55 +72,68 @@
         .app-container {
             display: flex;
             flex-direction: column;
-            height: calc(100vh - 38px);
+            height: 100vh;
             max-width: 500px;
             margin: 0 auto;
             background: white;
             position: relative;
         }
 
-        /* معاينة الكاميرا - بدون هوامش */
+        /* معاينة الكاميرا - بدون حاوية سوداء */
         .camera-preview {
             position: relative;
-            background: #000;
-            overflow: hidden;
+            background: transparent;
+            overflow: visible;
             transition: all 0.3s ease;
-            height: 35vh;
-            min-height: 180px;
             margin: 0;
             padding: 0;
         }
 
+        /* الوضع الكامل (قبل الاقتصاص) */
         .camera-preview.full {
             height: 35vh;
             min-height: 180px;
+            background: #000;
         }
 
+        /* بعد الاقتصاص - الصورة ملتصقة بالسقف */
         .camera-preview.compact {
-            height: 100px;
-            flex-shrink: 0;
-            min-height: 100px;
+            height: auto;
+            background: transparent;
+            margin: 0;
+            padding: 0;
+            line-height: 0;
         }
 
         #video, #image-preview {
+            width: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* في وضع المعاينة الكامل */
+        .camera-preview.full #video,
+        .camera-preview.full #image-preview {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
             object-fit: cover;
-            margin: 0;
-            padding: 0;
         }
 
-        /* الصورة المقتصة تلتصق بالحد العلوي بدون فراغات */
+        /* بعد الاقتصاص - الصورة ملتصقة بالسقف بدون أي فراغات */
         .camera-preview.compact #image-preview {
-            object-fit: cover;
-            object-position: top center;
+            display: block;
+            width: 100%;
+            height: auto;
+            object-fit: contain;
+            position: relative;
             top: 0;
             left: 0;
             margin: 0;
             padding: 0;
+            background: transparent;
         }
 
         /* إطار التركيز */
@@ -165,17 +174,16 @@
             z-index: 10;
             backdrop-filter: blur(10px);
             border: none;
-            transition: all 0.2s;
         }
 
-        /* منطقة التحكم - تقليل المسافات */
+        /* منطقة التحكم */
         .controls {
             flex: 1;
             overflow-y: auto;
             padding: 10px;
         }
 
-        /* الأزرار - تقليل المسافات */
+        /* الأزرار */
         .btn {
             width: 100%;
             height: 44px;
@@ -226,7 +234,7 @@
             color: white;
         }
 
-        /* حالة التطبيق - تقليل المسافات */
+        /* حالة التطبيق */
         .status {
             text-align: center;
             padding: 8px;
@@ -238,7 +246,7 @@
             margin-bottom: 10px;
         }
 
-        /* حقل الاسم - تقليل المسافات */
+        /* حقل الاسم */
         .name-field {
             position: relative;
             margin-bottom: 10px;
@@ -274,7 +282,7 @@
             font-size: 12px;
         }
 
-        /* رقم الهاتف - لون بني غامق مع زر تحرير */
+        /* رقم الهاتف */
         .phone-wrapper {
             position: relative;
             margin-bottom: 10px;
@@ -303,7 +311,7 @@
         
         .edit-phone-btn {
             position: absolute;
-            right: 8px;
+            left: 8px;
             top: 50%;
             transform: translateY(-50%);
             background: var(--primary);
@@ -349,7 +357,6 @@
             font-weight: bold;
             font-size: 18px;
             cursor: pointer;
-            transition: all 0.1s;
         }
 
         .key:active {
@@ -357,7 +364,7 @@
             background: #E5E5EA;
         }
 
-        /* الشيبس - تقليل المسافات */
+        /* الشيبس */
         .chips {
             display: flex;
             flex-wrap: wrap;
@@ -371,10 +378,9 @@
             border-radius: 18px;
             font-size: 12px;
             cursor: pointer;
-            transition: all 0.2s;
         }
 
-        /* حقل الرسالة - تقليل المسافات */
+        /* حقل الرسالة */
         textarea {
             width: 100%;
             height: 70px;
@@ -394,6 +400,37 @@
             gap: 8px;
         }
 
+        /* التبويبات */
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 8px;
+            text-align: center;
+            background: var(--light-gray);
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 13px;
+        }
+
+        .tab.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
         /* سجل المسح */
         .history-header {
             display: flex;
@@ -409,7 +446,7 @@
         }
 
         .history-list {
-            max-height: 280px;
+            max-height: 250px;
             overflow-y: auto;
         }
 
@@ -419,7 +456,6 @@
             border-radius: 10px;
             margin-bottom: 6px;
             cursor: pointer;
-            transition: all 0.2s;
         }
 
         .history-number {
@@ -456,23 +492,44 @@
             font-style: italic;
         }
 
-        /* الفوتر */
+        .clear-cache-btn {
+            background: var(--danger);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+
+        /* الفوتر - مرتفع وواضح */
         .footer {
             background: linear-gradient(135deg, var(--dark) 0%, #2a2a2e 100%);
             color: var(--gold);
             text-align: center;
-            padding: 8px;
-            font-size: 11px;
+            padding: 10px 12px;
+            font-size: 12px;
             font-weight: bold;
-            border-top: 1px solid var(--gold);
+            border-top: 2px solid var(--gold);
+            position: relative;
+            margin-top: 5px;
         }
 
         .footer-content {
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 6px;
-            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .footer-icon {
+            font-size: 13px;
+            animation: shine 2s infinite;
+        }
+
+        @keyframes shine {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; text-shadow: 0 0 5px var(--gold); }
         }
 
         /* شاشة التحميل */
@@ -494,7 +551,6 @@
             padding: 25px;
             border-radius: 16px;
             text-align: center;
-            max-width: 80%;
         }
 
         .spinner {
@@ -511,7 +567,6 @@
             to { transform: rotate(360deg); }
         }
 
-        /* رسالة الخطأ */
         .error-message {
             background: var(--danger);
             color: white;
@@ -521,54 +576,6 @@
             margin-bottom: 10px;
             display: none;
             font-size: 13px;
-        }
-
-        /* تبويبات */
-        .tabs {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 10px;
-        }
-
-        .tab {
-            flex: 1;
-            padding: 8px;
-            text-align: center;
-            background: var(--light-gray);
-            border-radius: 10px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 13px;
-            transition: all 0.2s;
-        }
-
-        .tab.active {
-            background: var(--primary);
-            color: white;
-        }
-
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        .clear-cache-btn {
-            background: var(--danger);
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 11px;
-        }
-        
-        /* إزالة أي هوامش إضافية */
-        .no-margin {
-            margin: 0;
-            padding: 0;
         }
     </style>
 </head>
@@ -584,6 +591,7 @@
 
 <!-- حاوية التطبيق -->
 <div class="app-container">
+    <!-- معاينة الصورة/الكاميرا - بدون حاوية سوداء بعد الاقتصاص -->
     <div class="camera-preview full" id="cameraPreview">
         <button class="flash-btn" id="flashBtn" style="display: none;">
             <i class="fas fa-bolt"></i>
@@ -644,7 +652,6 @@
                     </button>
                 </div>
 
-                <!-- حقل رقم الهاتف مع زر تحرير -->
                 <div class="phone-wrapper">
                     <div class="phone-number" id="phoneNumber"></div>
                     <button class="edit-phone-btn" id="editPhoneBtn">
@@ -716,12 +723,12 @@
         </div>
     </div>
 
-    <!-- فوتر احترافي -->
+    <!-- فوتر مرتفع وواضح -->
     <div class="footer">
         <div class="footer-content">
             <i class="fas fa-crown footer-icon"></i>
-            <span class="footer-text">Almas Solutions<sup>®</sup>²⁰²⁶</span>
-            <span class="footer-badge">PWA</span>
+            <span>Almas Solutions<sup>®</sup>²⁰²⁶</span>
+            <span style="font-size: 9px; background: rgba(212,175,55,0.2); padding: 2px 6px; border-radius: 10px;">PWA</span>
         </div>
     </div>
 </div>
@@ -738,7 +745,6 @@
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
 <script>
-    // المتغيرات العامة
     let cropper = null;
     let currentRotation = 0;
     let mediaStream = null;
@@ -749,7 +755,6 @@
     let nextId = 1;
     let isEditingPhone = false;
     
-    // العناصر DOM
     const video = document.getElementById('video');
     const imagePreview = document.getElementById('image-preview');
     const cameraPreview = document.getElementById('cameraPreview');
@@ -772,7 +777,6 @@
     const keyboard = document.getElementById('keyboard');
     const editPhoneBtn = document.getElementById('editPhoneBtn');
 
-    // تبديل حالة تحرير رقم الهاتف
     function togglePhoneEditing() {
         isEditingPhone = !isEditingPhone;
         if (isEditingPhone) {
@@ -788,22 +792,12 @@
         }
     }
 
-    // الضغط على حقل رقم الهاتف
-    phoneDisplay.onclick = () => {
-        togglePhoneEditing();
-    };
+    phoneDisplay.onclick = () => togglePhoneEditing();
+    editPhoneBtn.onclick = (e) => { e.stopPropagation(); togglePhoneEditing(); };
 
-    // زر التحرير
-    editPhoneBtn.onclick = (e) => {
-        e.stopPropagation();
-        togglePhoneEditing();
-    };
-
-    // فتح قاعدة البيانات
     function openDatabase() {
         return new Promise((resolve, reject) => {
             const request = indexedDB.open('OCRcallDB', 1);
-            
             request.onerror = () => reject(request.error);
             request.onsuccess = () => {
                 db = request.result;
@@ -812,13 +806,10 @@
                 const cursor = store.openCursor(null, 'prev');
                 cursor.onsuccess = (e) => {
                     const cursor = e.target.result;
-                    if (cursor) {
-                        nextId = cursor.value.id + 1;
-                    }
+                    if (cursor) nextId = cursor.value.id + 1;
                     resolve();
                 };
             };
-            
             request.onupgradeneeded = (e) => {
                 const db = e.target.result;
                 if (!db.objectStoreNames.contains('scans')) {
@@ -829,78 +820,42 @@
         });
     }
 
-    // حفظ مسح جديد
     async function saveScan(name, phone, message) {
-        if (!phone) {
-            showError('لا يوجد رقم هاتف للحفظ');
-            return false;
-        }
-        
+        if (!phone) { showError('لا يوجد رقم هاتف للحفظ'); return false; }
         const scan = {
-            id: nextId++,
-            name: name || 'عميل',
-            phone: phone,
-            message: message || '',
-            date: new Date().toISOString(),
-            dateFormatted: new Date().toLocaleString('ar-EG')
+            id: nextId++, name: name || 'عميل', phone: phone, message: message || '',
+            date: new Date().toISOString(), dateFormatted: new Date().toLocaleString('ar-EG')
         };
-        
         return new Promise((resolve, reject) => {
             const tx = db.transaction(['scans'], 'readwrite');
             const store = tx.objectStore('scans');
             const request = store.add(scan);
-            
-            request.onsuccess = () => {
-                statusDiv.innerHTML = '<i class="fas fa-check-circle"></i> ✅ تم حفظ البيانات في السجل';
-                loadHistory();
-                resolve(true);
-            };
-            
-            request.onerror = () => {
-                showError('فشل حفظ البيانات');
-                reject(request.error);
-            };
+            request.onsuccess = () => { statusDiv.innerHTML = '<i class="fas fa-check-circle"></i> ✅ تم حفظ البيانات'; loadHistory(); resolve(true); };
+            request.onerror = () => { showError('فشل حفظ البيانات'); reject(request.error); };
         });
     }
 
-    // تحميل السجل
     async function loadHistory() {
         if (!db) return;
-        
         return new Promise((resolve) => {
             const tx = db.transaction(['scans'], 'readonly');
             const store = tx.objectStore('scans');
             const index = store.index('date');
             const scans = [];
-            
             index.openCursor(null, 'prev').onsuccess = (e) => {
                 const cursor = e.target.result;
-                if (cursor) {
-                    scans.push(cursor.value);
-                    cursor.continue();
-                } else {
-                    displayHistory(scans);
-                    resolve(scans);
-                }
+                if (cursor) { scans.push(cursor.value); cursor.continue(); }
+                else { displayHistory(scans); resolve(scans); }
             };
         });
     }
 
-    // عرض السجل
     function displayHistory(scans) {
         if (!historyList) return;
-        
-        if (scans.length === 0) {
-            historyList.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--gray);">📭 لا توجد بيانات في السجل</div>';
-            return;
-        }
-        
+        if (scans.length === 0) { historyList.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--gray);">📭 لا توجد بيانات</div>'; return; }
         historyList.innerHTML = scans.map(scan => `
             <div class="history-item" onclick="window.loadScanToMain(${scan.id})">
-                <div>
-                    <span class="history-number">#${scan.id}</span>
-                    <span class="history-name">${escapeHtml(scan.name)}</span>
-                </div>
+                <div><span class="history-number">#${scan.id}</span><span class="history-name">${escapeHtml(scan.name)}</span></div>
                 <div class="history-phone">📞 ${scan.phone}</div>
                 ${scan.message ? `<div class="history-message">💬 ${escapeHtml(scan.message.substring(0, 50))}${scan.message.length > 50 ? '...' : ''}</div>` : ''}
                 <div class="history-date">📅 ${scan.dateFormatted}</div>
@@ -908,122 +863,60 @@
         `).join('');
     }
 
-    // تحميل مسح إلى الواجهة الرئيسية
     window.loadScanToMain = function(id) {
         const tx = db.transaction(['scans'], 'readonly');
         const store = tx.objectStore('scans');
         const request = store.get(id);
-        
         request.onsuccess = () => {
             const scan = request.result;
             if (scan) {
                 customerNameInput.value = scan.name;
                 phoneDisplay.innerText = scan.phone;
                 messageInput.value = scan.message || '';
-                statusDiv.innerHTML = '<i class="fas fa-check-circle"></i> ✅ تم تحميل البيانات من السجل';
+                statusDiv.innerHTML = '<i class="fas fa-check-circle"></i> ✅ تم التحميل';
                 document.querySelector('.tab[data-tab="main"]').click();
             }
         };
     };
 
-    // مسح الكاش بالكامل
     async function clearAllCache() {
-        if (confirm('⚠️ هل أنت متأكد من مسح جميع بيانات السجل؟\nلا يمكن التراجع عن هذا الإجراء!')) {
+        if (confirm('⚠️ هل أنت متأكد من مسح جميع بيانات السجل؟')) {
             const tx = db.transaction(['scans'], 'readwrite');
             const store = tx.objectStore('scans');
-            const request = store.clear();
-            
-            request.onsuccess = () => {
-                nextId = 1;
-                loadHistory();
-                statusDiv.innerHTML = '<i class="fas fa-check-circle"></i> 🗑️ تم مسح الكاش بنجاح';
-                showError('تم مسح جميع البيانات');
-            };
-            
-            request.onerror = () => {
-                showError('فشل مسح الكاش');
-            };
+            store.clear().onsuccess = () => { nextId = 1; loadHistory(); statusDiv.innerHTML = '<i class="fas fa-check-circle"></i> 🗑️ تم مسح الكاش'; showError('تم مسح جميع البيانات'); };
         }
     }
 
-    // عرض رسالة خطأ
     function showError(message) {
         errorMessageDiv.style.display = 'block';
         errorMessageDiv.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${message}`;
-        setTimeout(() => {
-            errorMessageDiv.style.display = 'none';
-        }, 3000);
+        setTimeout(() => { errorMessageDiv.style.display = 'none'; }, 3000);
     }
 
-    // تحويل الأرقام العربية إلى إنجليزية
-    function arabicToEnglish(str) {
-        const arabicNumbers = '٠١٢٣٤٥٦٧٨٩';
-        return str.replace(/[٠-٩]/g, d => arabicNumbers.indexOf(d));
-    }
+    function arabicToEnglish(str) { return str.replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d)); }
+    function extractPhoneNumber(text) { const match = arabicToEnglish(text.replace(/[\s\-\(\)]/g, '')).match(/01[0125][0-9]{8}/); return match ? match[0] : ''; }
+    function extractName(text) { const lines = text.split('\n'); for (let line of lines) { line = line.trim(); if (line.length > 2 && line.length < 30 && !/[0-9]/.test(line)) return line; } return ''; }
+    
+    function showLoading(show, text = 'جاري التحميل...') { if (show) { loadingText.textContent = text; loadingOverlay.style.display = 'flex'; } else { loadingOverlay.style.display = 'none'; } }
 
-    // استخراج رقم الهاتف
-    function extractPhoneNumber(text) {
-        const cleaned = arabicToEnglish(text.replace(/[\s\-\(\)]/g, ''));
-        const phoneRegex = /01[0125][0-9]{8}/;
-        const match = cleaned.match(phoneRegex);
-        return match ? match[0] : '';
-    }
-
-    // استخراج الاسم
-    function extractName(text) {
-        const lines = text.split('\n');
-        for (let line of lines) {
-            line = line.trim();
-            if (line.length > 2 && line.length < 30 && !/[0-9]/.test(line) && line.length > 2) {
-                return line;
-            }
-        }
-        return '';
-    }
-
-    // عرض/إخفاء التحميل
-    function showLoading(show, text = 'جاري التحميل...') {
-        if (show) {
-            loadingText.textContent = text;
-            loadingOverlay.style.display = 'flex';
-        } else {
-            loadingOverlay.style.display = 'none';
-        }
-    }
-
-    // بدء OCR
     async function performOCR(imageData) {
-        if (!tesseractReady) {
-            showError('محرك OCR لا يزال قيد التحميل، انتظر قليلاً');
-            return;
-        }
-        
-        statusDiv.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> جاري قراءة البيانات...';
+        if (!tesseractReady) { showError('محرك OCR قيد التحميل'); return; }
+        statusDiv.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> جاري القراءة...';
         retryOcrBtn.style.display = 'none';
-        
         let timeout = setTimeout(() => {
             if (statusDiv.innerHTML !== '✅ تم القراءة') {
-                statusDiv.innerHTML = '⚠️ انتهى الوقت، يمكنك الإدخال يدوياً';
+                statusDiv.innerHTML = '⚠️ انتهى الوقت، أدخل يدوياً';
                 keyboard.classList.add('show');
                 retryOcrBtn.style.display = 'block';
             }
         }, 8000);
-
         try {
             showLoading(true, 'جاري معالجة الصورة...');
-            
-            const { data: { text } } = await Tesseract.recognize(
-                imageData,
-                'ara+eng',
-                { logger: m => console.log(m) }
-            );
-            
+            const { data: { text } } = await Tesseract.recognize(imageData, 'ara+eng');
             clearTimeout(timeout);
             showLoading(false);
-            
             const phone = extractPhoneNumber(text);
             const name = extractName(text);
-            
             if (phone) {
                 phoneDisplay.innerText = phone;
                 statusDiv.innerHTML = '<i class="fas fa-check-circle"></i> ✅ تم العثور على الرقم';
@@ -1033,193 +926,106 @@
                 editPhoneBtn.innerHTML = '<i class="fas fa-edit"></i>';
             } else {
                 phoneDisplay.innerText = '';
-                statusDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i> ⚠️ لم يتم العثور على رقم، أدخل يدوياً';
+                statusDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i> ⚠️ لم يتم العثور على رقم';
                 keyboard.classList.add('show');
                 retryOcrBtn.style.display = 'block';
             }
-            
             if (name) customerNameInput.value = name;
-            
         } catch (error) {
             clearTimeout(timeout);
             showLoading(false);
-            console.error('OCR Error:', error);
-            statusDiv.innerHTML = '<i class="fas fa-times-circle"></i> ❌ فشل القراءة، أدخل البيانات يدوياً';
+            statusDiv.innerHTML = '<i class="fas fa-times-circle"></i> ❌ فشل القراءة';
             keyboard.classList.add('show');
             retryOcrBtn.style.display = 'block';
-            showError('حدث خطأ أثناء قراءة الصورة');
+            showError('حدث خطأ');
         }
     }
 
-    // قص الصورة وبدء OCR
     function cropAndOCR() {
-        if (!cropper) {
-            showError('لم يتم تحميل الصورة بشكل صحيح');
-            return;
-        }
-        
+        if (!cropper) { showError('لم يتم تحميل الصورة'); return; }
         try {
             const canvas = cropper.getCroppedCanvas();
             const imageData = canvas.toDataURL('image/png');
             lastImageData = imageData;
             
+            // تغيير شكل الحاوية - الصورة تلتصق بالسقف بدون خلفية سوداء
             cameraPreview.classList.remove('full');
             cameraPreview.classList.add('compact');
             imagePreview.src = imageData;
             imagePreview.style.display = 'block';
             video.style.display = 'none';
+            // إزالة الخلفية السوداء
+            cameraPreview.style.background = 'transparent';
             
-            if (cropper) {
-                cropper.destroy();
-                cropper = null;
-            }
-            
+            if (cropper) { cropper.destroy(); cropper = null; }
             cropScreen.style.display = 'none';
             resultScreen.style.display = 'block';
-            
             performOCR(imageData);
-        } catch (error) {
-            console.error('Crop error:', error);
-            showError('حدث خطأ أثناء قص الصورة');
-        }
+        } catch (error) { console.error(error); showError('حدث خطأ'); }
     }
 
-    // تهيئة Cropper
     function initCropper(imageSrc) {
         try {
             imagePreview.src = imageSrc;
             imagePreview.style.display = 'block';
             video.style.display = 'none';
             focusFrame.style.display = 'none';
-            
             startScreen.style.display = 'none';
             cropScreen.style.display = 'block';
-            
             if (cropper) cropper.destroy();
-            
             imagePreview.onload = () => {
-                cropper = new Cropper(imagePreview, {
-                    viewMode: 1,
-                    autoCropArea: 0.7,
-                    movable: true,
-                    zoomable: true,
-                    rotatable: true,
-                    cropBoxMovable: true,
-                    cropBoxResizable: true
-                });
-                setTimeout(() => {
-                    if (cropper) {
-                        const containerData = cropper.getContainerData();
-                        cropper.setCropBoxData({
-                            top: containerData.height * 0.2
-                        });
-                    }
-                }, 100);
+                cropper = new Cropper(imagePreview, { viewMode: 1, autoCropArea: 0.7, movable: true, zoomable: true, rotatable: true });
+                setTimeout(() => { if (cropper) { const containerData = cropper.getContainerData(); cropper.setCropBoxData({ top: containerData.height * 0.2 }); } }, 100);
             };
-            
-            if (imagePreview.complete) {
-                imagePreview.onload();
-            }
-        } catch (error) {
-            console.error('Cropper init error:', error);
-            showError('حدث خطأ في تهيئة أداة القص');
-        }
+            if (imagePreview.complete) imagePreview.onload();
+        } catch (error) { showError('خطأ في أداة القص'); }
     }
 
-    // فتح الكاميرا
     async function startCamera() {
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: 'environment' }
-            });
-            
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
             mediaStream = stream;
             video.srcObject = stream;
             video.style.display = 'block';
             imagePreview.style.display = 'none';
             focusFrame.style.display = 'block';
-            
             const track = stream.getVideoTracks()[0];
-            const capabilities = track.getCapabilities();
-            if (capabilities.torch) {
-                flashBtn.style.display = 'flex';
-            }
-            
+            if (track.getCapabilities().torch) flashBtn.style.display = 'flex';
             const cameraBtn = document.getElementById('cameraBtn');
             cameraBtn.innerHTML = '<i class="fas fa-camera"></i> 📸 التقاط صورة';
             cameraBtn.onclick = capturePhoto;
-            
-            statusDiv.innerHTML = '<i class="fas fa-camera"></i> الكاميرا جاهزة، ركز على رقم الهاتف';
-            
-        } catch (error) {
-            console.error('Camera error:', error);
-            statusDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i> ❌ لا يمكن الوصول للكاميرا';
-            showError('تأكد من منح صلاحية الوصول للكاميرا');
-        }
+            statusDiv.innerHTML = '<i class="fas fa-camera"></i> الكاميرا جاهزة';
+        } catch (error) { statusDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i> ❌ لا يمكن الوصول للكاميرا'; showError('صلاحية الكاميرا مطلوبة'); }
     }
 
-    // التقاط صورة
     function capturePhoto() {
-        if (!video.videoWidth) {
-            showError('الكاميرا غير جاهزة بعد');
-            return;
-        }
-        
+        if (!video.videoWidth) { showError('الكاميرا غير جاهزة'); return; }
         const canvas = document.createElement('canvas');
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         canvas.getContext('2d').drawImage(video, 0, 0);
-        
-        if (mediaStream) {
-            mediaStream.getTracks().forEach(track => track.stop());
-            mediaStream = null;
-        }
-        
+        if (mediaStream) { mediaStream.getTracks().forEach(track => track.stop()); mediaStream = null; }
         initCropper(canvas.toDataURL('image/png'));
     }
 
-    // تشغيل الفلاش
     async function toggleFlash() {
         if (!mediaStream) return;
         const track = mediaStream.getVideoTracks()[0];
         torchEnabled = !torchEnabled;
-        await track.applyConstraints({
-            advanced: [{ torch: torchEnabled }]
-        });
+        await track.applyConstraints({ advanced: [{ torch: torchEnabled }] });
         flashBtn.style.background = torchEnabled ? 'var(--warning)' : 'rgba(0,0,0,0.7)';
     }
 
-    // دوال عامة
-    window.addDigit = function(digit) {
-        if (!isEditingPhone) return;
-        let current = phoneDisplay.innerText;
-        if (current.length < 11) {
-            phoneDisplay.innerText = current + digit;
-        }
-    };
-    
-    window.deleteDigit = function() {
-        if (!isEditingPhone) return;
-        phoneDisplay.innerText = phoneDisplay.innerText.slice(0, -1);
-    };
-    
-    window.clearPhone = function() {
-        if (!isEditingPhone) return;
-        phoneDisplay.innerText = '';
-    };
-    
-    window.setQuickMessage = function(message) {
-        messageInput.value = message;
-    };
-    
-    // إعادة تعيين التطبيق
+    window.addDigit = function(d) { if (isEditingPhone && phoneDisplay.innerText.length < 11) phoneDisplay.innerText += d; };
+    window.deleteDigit = function() { if (isEditingPhone) phoneDisplay.innerText = phoneDisplay.innerText.slice(0, -1); };
+    window.clearPhone = function() { if (isEditingPhone) phoneDisplay.innerText = ''; };
+    window.setQuickMessage = function(m) { messageInput.value = m; };
+
     function resetApp() {
-        if (mediaStream) {
-            mediaStream.getTracks().forEach(track => track.stop());
-            mediaStream = null;
-        }
+        if (mediaStream) { mediaStream.getTracks().forEach(track => track.stop()); mediaStream = null; }
         cameraPreview.classList.remove('compact');
         cameraPreview.classList.add('full');
+        cameraPreview.style.background = '#000';
         video.style.display = 'block';
         imagePreview.style.display = 'none';
         focusFrame.style.display = 'block';
@@ -1227,14 +1033,11 @@
         cropScreen.style.display = 'none';
         resultScreen.style.display = 'none';
         statusDiv.innerHTML = '<i class="fas fa-check-circle"></i> جاهز للاستخدام';
-        
         const cameraBtn = document.getElementById('cameraBtn');
         cameraBtn.innerHTML = '<i class="fas fa-camera"></i> فتح الكاميرا';
         cameraBtn.onclick = startCamera;
-        
         flashBtn.style.display = 'none';
         torchEnabled = false;
-        
         phoneDisplay.innerText = '';
         customerNameInput.value = '';
         messageInput.value = '';
@@ -1243,51 +1046,16 @@
         editPhoneBtn.classList.remove('active');
         editPhoneBtn.innerHTML = '<i class="fas fa-edit"></i>';
     }
-    
-    // التحقق من حالة الاتصال
-    function updateOfflineStatus() {
-        if (!navigator.onLine) {
-            offlineIndicator.classList.add('show');
-        } else {
-            offlineIndicator.classList.remove('show');
-        }
-    }
-    
-    // تحميل Tesseract
+
+    function updateOfflineStatus() { offlineIndicator.classList.toggle('show', !navigator.onLine); }
     async function initTesseract() {
-        showLoading(true, 'جاري تحميل محرك التعرف الضوئي...');
-        try {
-            if (typeof Tesseract === 'undefined') {
-                throw new Error('Tesseract غير متاح');
-            }
-            tesseractReady = true;
-            showLoading(false);
-            statusDiv.innerHTML = '<i class="fas fa-check-circle"></i> ✅ جاهز - يمكنك البدء';
-        } catch (error) {
-            console.error('Tesseract init error:', error);
-            showLoading(false);
-            statusDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i> ⚠️ الوضع المبسط - الإدخال اليدوي فقط';
-            showError('سيتم العمل في وضع الإدخال اليدوي');
-            tesseractReady = false;
-        }
+        showLoading(true, 'جاري تحميل OCR...');
+        try { tesseractReady = true; showLoading(false); statusDiv.innerHTML = '<i class="fas fa-check-circle"></i> ✅ جاهز'; }
+        catch (error) { showLoading(false); statusDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i> ⚠️ وضع الإدخال اليدوي'; tesseractReady = false; }
     }
-    
-    // منع محاولة تحميل الملفات غير الموجودة
-    window.addEventListener('error', function(e) {
-        if (e.target.tagName === 'LINK' || e.target.tagName === 'SCRIPT') {
-            console.log('فشل تحميل المورد:', e.target.href || e.target.src);
-            e.preventDefault();
-        }
-    }, true);
-    
-    // Escaping HTML
-    function escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-    
-    // تبديل التبويبات
+
+    function escapeHtml(text) { const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
+
     document.querySelectorAll('.tab').forEach(tab => {
         tab.addEventListener('click', () => {
             const tabName = tab.dataset.tab;
@@ -1295,113 +1063,40 @@
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
             document.getElementById(`${tabName}Tab`).classList.add('active');
-            
-            if (tabName === 'history') {
-                loadHistory();
-            }
+            if (tabName === 'history') loadHistory();
         });
     });
-    
-    // الأحداث
-    document.getElementById('callBtn').onclick = () => {
-        const phone = phoneDisplay.innerText;
-        if (phone && phone.length >= 10) {
-            window.location.href = `tel:${phone}`;
-        } else {
-            showError('الرجاء إدخال رقم هاتف صحيح');
-        }
-    };
-    
-    document.getElementById('whatsappBtn').onclick = () => {
-        const phone = phoneDisplay.innerText;
-        const message = messageInput.value || 'مرحباً';
-        if (phone && phone.length >= 10) {
-            window.open(`https://wa.me/2${phone}?text=${encodeURIComponent(message)}`);
-        } else {
-            showError('الرجاء إدخال رقم هاتف صحيح');
-        }
-    };
-    
+
+    document.getElementById('callBtn').onclick = () => { const p = phoneDisplay.innerText; if (p && p.length >= 10) window.location.href = `tel:${p}`; else showError('رقم غير صحيح'); };
+    document.getElementById('whatsappBtn').onclick = () => { const p = phoneDisplay.innerText; const m = messageInput.value || 'مرحباً'; if (p && p.length >= 10) window.open(`https://wa.me/2${p}?text=${encodeURIComponent(m)}`); else showError('رقم غير صحيح'); };
     document.getElementById('saveContactBtn').onclick = () => {
         const name = customerNameInput.value || 'عميل';
         const phone = phoneDisplay.innerText;
-        
-        if (!phone || phone.length < 10) {
-            showError('لا يوجد رقم هاتف صحيح للحفظ');
-            return;
-        }
-        
+        if (!phone || phone.length < 10) { showError('لا يوجد رقم صحيح'); return; }
         const vcf = `BEGIN:VCARD\nVERSION:3.0\nFN:${name}\nTEL;TYPE=CELL:${phone}\nEND:VCARD`;
         const blob = new Blob([vcf], { type: 'text/vcard' });
         const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${name}.vcf`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        
+        const a = document.createElement('a'); a.href = url; a.download = `${name}.vcf`;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
         statusDiv.innerHTML = '<i class="fas fa-check-circle"></i> ✅ تم حفظ جهة الاتصال';
     };
-    
-    document.getElementById('saveToHistoryBtn').onclick = async () => {
-        const name = customerNameInput.value;
-        const phone = phoneDisplay.innerText;
-        const message = messageInput.value;
-        
-        if (!phone) {
-            showError('لا يوجد رقم هاتف للحفظ');
-            return;
-        }
-        
-        await saveScan(name, phone, message);
-    };
-    
+    document.getElementById('saveToHistoryBtn').onclick = async () => { await saveScan(customerNameInput.value, phoneDisplay.innerText, messageInput.value); };
     document.getElementById('clearHistoryBtn').onclick = clearAllCache;
-    
     document.getElementById('newBtn').onclick = resetApp;
     document.getElementById('cancelBtn').onclick = resetApp;
     document.getElementById('refreshBtn').onclick = () => location.reload();
-    
-    retryOcrBtn.onclick = () => {
-        if (lastImageData) performOCR(lastImageData);
-    };
-    
-    rotateSlider.oninput = function() {
-        if (cropper) {
-            const rotation = parseInt(this.value);
-            cropper.rotate(rotation - currentRotation);
-            currentRotation = rotation;
-        }
-    };
-    
+    retryOcrBtn.onclick = () => { if (lastImageData) performOCR(lastImageData); };
+    rotateSlider.oninput = function() { if (cropper) { const r = parseInt(this.value); cropper.rotate(r - currentRotation); currentRotation = r; } };
     document.getElementById('ocrBtn').onclick = cropAndOCR;
-    
-    document.getElementById('imageUpload').onchange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (ev) => initCropper(ev.target.result);
-            reader.readAsDataURL(file);
-        }
-    };
-    
+    document.getElementById('imageUpload').onchange = (e) => { const file = e.target.files[0]; if (file) { const reader = new FileReader(); reader.onload = (ev) => initCropper(ev.target.result); reader.readAsDataURL(file); } };
     flashBtn.onclick = toggleFlash;
     document.getElementById('cameraBtn').onclick = startCamera;
-    
-    // مراقبة حالة الاتصال
+
     window.addEventListener('online', updateOfflineStatus);
     window.addEventListener('offline', updateOfflineStatus);
-    
-    // بدء التطبيق
-    async function init() {
-        await openDatabase();
-        await loadHistory();
-        updateOfflineStatus();
-        initTesseract();
-    }
-    
+    window.addEventListener('error', function(e) { if (e.target.tagName === 'LINK' || e.target.tagName === 'SCRIPT') e.preventDefault(); }, true);
+
+    async function init() { await openDatabase(); await loadHistory(); updateOfflineStatus(); initTesseract(); }
     init();
 </script>
 </body>
