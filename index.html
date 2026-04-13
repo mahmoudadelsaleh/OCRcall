@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>كاشف الفواتير الاحترافي</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#007bff">
+    <link rel="apple-touch-icon" href="icon-192x192.png">
+    
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
@@ -115,6 +120,11 @@
     const phoneDisp = document.getElementById('phone-display'), nameInput = document.getElementById('name-input');
     const msgText = document.getElementById('msg-text'), chipsDiv = document.getElementById('chips');
     let savedMsgs = JSON.parse(localStorage.getItem('user_msgs')) || ["تم استلام الطلب.", "الطلب جاهز."];
+
+    // Service Worker Registration for PWA
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js').catch(err => console.log('SW error', err));
+    }
 
     document.getElementById('btn-camera').onclick = async () => {
         const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
