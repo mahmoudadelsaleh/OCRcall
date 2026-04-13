@@ -3,182 +3,199 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>OCR Pro - Almas Solutions</title>
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#000000">
-    
-    <script src="tesseract.min.js"></script>
-    <link rel="stylesheet" href="cropper.min.css">
-    <script src="cropper.min.js"></script>
+    <title>كاشف الفواتير الاحترافي</title>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 
     <style>
-        :root { --primary: #007bff; --success: #28a745; --danger: #dc3545; --warning: #f39c12; --bg: #f4f7f6; --gold: #d4af37; }
-        html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; background: var(--bg); font-family: sans-serif; }
-        .main-wrapper { display: flex; flex-direction: column; height: 100vh; max-width: 500px; margin: auto; background: white; position: relative; }
-        
-        #preview-box { flex: 0 0 35%; background: #000; position: relative; overflow: hidden; border-bottom: 2px solid var(--gold); transition: flex 0.4s; }
-        #preview-box.compact { flex: 0 0 15%; }
-        #video, #image-to-crop { position: absolute; top: 0; right: 0; width: 100%; height: 100%; object-fit: contain; }
-        
-        .focus-frame { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 75%; height: 120px; border: 3px solid var(--warning); box-shadow: 0 0 0 1000px rgba(0,0,0,0.6); z-index: 5; pointer-events: none; display: none; border-radius: 12px; }
+        :root { --primary: #007bff; --success: #28a745; --danger: #dc3545; --warning: #f39c12; --bg: #f4f7f6; }
 
-        .controls-section { flex: 1; padding: 10px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding-bottom: 60px; }
-        .btn { width: 95%; padding: 12px; margin: 4px 0; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; background: var(--bg); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+
+        .main-wrapper { display: flex; flex-direction: column; height: 100vh; width: 100%; max-width: 500px; margin: auto; background: white; }
+
+        /* حاوية الصورة - تم تقليل الارتفاع لتصبح 38% من الشاشة */
+        .preview-container { 
+            flex: 0 0 38%; background: #000; position: relative; 
+            display: block; overflow: hidden; padding: 0; margin: 0;
+        }
+        #video, #image-to-crop { 
+            position: absolute; top: 0; right: 0;
+            width: 100%; height: 100%; object-fit: contain; margin: 0;
+        }
+
+        .controls-section { flex: 1; padding: 8px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; }
+
+        .btn { 
+            width: 90%; padding: 12px; margin: 4px 0; border-radius: 12px; 
+            border: none; font-weight: bold; cursor: pointer; font-size: 16px; 
+        }
         .btn-primary { background: var(--primary); color: white; }
         .btn-success { background: var(--success); color: white; }
         .btn-danger { background: var(--danger); color: white; }
         .btn-warning { background: var(--warning); color: white; }
 
-        .ocr-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 95%; }
-        .edit-field { width: 95%; padding: 10px; border: 2px solid #ddd; border-radius: 10px; margin: 5px 0; text-align: center; font-size: 18px; background: #fffbe6; }
-        .phone-val { font-size: 32px; font-weight: bold; color: #d32f2f; margin: 8px 0; border: 2px dashed var(--primary); padding: 5px; border-radius: 10px; width: 90%; text-align: center; background: white; }
+        .result-card { width: 100%; display: none; }
+        .edit-field { width: 95%; padding: 8px; border: 2px solid #ddd; border-radius: 10px; font-size: 16px; margin: 4px auto; background: #fffbe6; text-align: center; display: block; }
+        .phone-val { font-size: 24px; font-weight: bold; color: #d32f2f; text-align: center; margin: 4px auto; border: 2px dashed var(--primary); padding: 5px; border-radius: 10px; width: fit-content; min-width: 180px; }
 
-        .mini-keyboard { display: none; grid-template-columns: repeat(3, 1fr); gap: 5px; background: #eee; padding: 10px; border-radius: 12px; margin: 5px auto; width: 220px; }
+        .mini-keyboard { display: none; grid-template-columns: repeat(3, 1fr); gap: 5px; background: #eee; padding: 8px; border-radius: 12px; margin: 8px auto; width: 200px; }
         .key { background: white; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 18px; text-align: center; cursor: pointer; box-shadow: 0 2px 0 #bbb; }
 
-        .action-grid-custom { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; margin-top: 10px; }
-        .right-side, .left-side { display: flex; flex-direction: column; gap: 8px; }
+        .action-grid { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 8px; 
+            width: 95%; 
+            margin: 8px auto; 
+        }
+        .action-grid .btn { width: 100%; margin: 0; padding: 10px; font-size: 14px; }
 
-        #flash-toggle { position: absolute; top: 10px; left: 10px; z-index: 10; background: rgba(0,0,0,0.5); border-radius: 50%; width: 40px; height: 40px; display: none; align-items: center; justify-content: center; color: white; border: 2px solid white; cursor: pointer; }
-        .footer-brand { width: 100%; background: #000; color: var(--gold); text-align: center; padding: 12px 0; font-size: 14px; font-weight: bold; position: absolute; bottom: 0; left: 0; z-index: 100; border-top: 2px solid var(--gold); }
+        .chips-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; margin: 4px 0; }
+        .chip { background: #e9ecef; padding: 4px 10px; border-radius: 15px; font-size: 11px; cursor: pointer; border: 1px solid #ccc; }
+
+        #status { font-size: 12px; color: #555; font-weight: bold; margin-bottom: 2px; }
     </style>
 </head>
 <body>
 
 <div class="main-wrapper">
-    <div id="preview-box">
-        <div id="flash-toggle">⚡</div>
-        <div id="focus-frame" class="focus-frame"></div>
+    <div class="preview-container">
         <video id="video" autoplay playsinline></video>
-        <img id="image-to-crop" style="display:none;">
+        <img id="image-to-crop">
     </div>
 
     <div class="controls-section">
-        <div id="status" style="font-size:12px; font-weight:bold; color:var(--primary); margin-bottom:5px;">جاري تشغيل النظام...</div>
+        <div id="status">جاهز</div>
 
-        <div id="init-btns" style="width:100%">
+        <div id="init-btns" style="width: 100%;">
             <button class="btn btn-primary" id="btn-camera">📸 فتح الكاميرا</button>
-            <label class="btn btn-primary" style="background:#6c757d;" for="file-in">📁 رفع صورة</label>
+            <label class="btn btn-primary" style="background:#6c757d; display: block; text-align: center;" for="file-in">📁 رفع صورة</label>
             <input type="file" id="file-in" accept="image/*" style="display:none;">
         </div>
 
-        <div id="crop-btns" style="display:none; width:100%; text-align:center;">
-            <input type="range" id="rot-slider" min="-180" max="180" step="1" value="0" style="width:90%; margin: 10px 0;">
-            <div class="ocr-grid">
-                <button class="btn btn-success" id="btn-ocr-off">🌐 أوفلاين</button>
-                <button class="btn btn-primary" id="btn-ocr-on" style="background:#673ab7;">🚀 أونلاين</button>
+        <div id="crop-btns" style="display:none; width: 100%;">
+            <div style="background:#e2e8f0; padding:8px; border-radius:12px; margin: 5px auto; width: 90%;">
+                <input type="range" id="rot-slider" min="-45" max="45" step="1" value="0" style="width:100%">
             </div>
-            <button class="btn btn-danger" style="margin-top:8px" onclick="location.reload()">🔄 إعادة</button>
+            <button class="btn btn-success" id="btn-ocr">🔍 قراءة البيانات</button>
+            <button class="btn btn-danger" onclick="location.reload()">🔄 إعادة</button>
         </div>
 
-        <div id="result-ui" style="display:none; width:100%; text-align:center;">
+        <div id="result-ui" class="result-card">
             <input type="text" id="name-input" class="edit-field" placeholder="اسم العميل">
             <div class="phone-val" id="phone-display"></div>
-            <button class="btn btn-warning" style="width:auto; padding:5px 20px; font-size:12px;" onclick="toggleKB()">✏️ تعديل الرقم</button>
+
+            <button class="btn btn-warning" style="width:auto; padding:5px 20px; font-size:12px; margin:auto; display:block;" onclick="toggleKB()">✏️ تعديل الرقم</button>
+
             <div id="mini-kb" class="mini-keyboard">
-                <div class="key" onclick="press('9')">9</div><div class="key" onclick="press('8')">8</div><div class="key" onclick="press('7')">7</div>
-                <div class="key" onclick="press('6')">6</div><div class="key" onclick="press('5')">5</div><div class="key" onclick="press('4')">4</div>
-                <div class="key" onclick="press('3')">3</div><div class="key" onclick="press('2')">2</div><div class="key" onclick="press('1')">1</div>
+                <div class="key" onclick="press('7')">7</div><div class="key" onclick="press('8')">8</div><div class="key" onclick="press('9')">9</div>
+                <div class="key" onclick="press('4')">4</div><div class="key" onclick="press('5')">5</div><div class="key" onclick="press('6')">6</div>
+                <div class="key" onclick="press('1')">1</div><div class="key" onclick="press('2')">2</div><div class="key" onclick="press('3')">3</div>
                 <div class="key" style="background:#ff4d4d; color:white" onclick="press('X')">X</div><div class="key" onclick="press('0')">0</div><div class="key" style="background:#888; color:white" onclick="press('C')">C</div>
             </div>
-            <div class="action-grid-custom">
-                <div class="right-side"><button class="btn btn-success" id="btn-wa">💬 واتساب</button><button class="btn btn-primary" id="btn-call">📞 اتصال</button></div>
-                <div class="left-side"><button class="btn btn-warning" id="btn-vcf">👤 حفظ</button><button class="btn btn-danger" onclick="location.reload()">🔄 جديد</button></div>
+
+            <div class="chips-container" id="chips"></div>
+            <textarea id="msg-text" class="edit-field" rows="1" style="font-size: 13px;" placeholder="رسالة الواتساب"></textarea>
+
+            <div class="action-grid">
+                <button class="btn btn-success" id="btn-wa">💬 واتساب</button>
+                <button class="btn btn-primary" id="btn-call">📞 اتصال</button>
+                <button class="btn btn-warning" id="btn-vcf">👤 حفظ</button>
+                <button class="btn btn-danger" onclick="location.reload()">🔄 إعادة</button>
             </div>
         </div>
     </div>
-    <div class="footer-brand">Almas Solutions®²٠٢٦</div>
 </div>
 
 <script>
-    let cropper, currentRot = 0, track = null, flashOn = false, worker = null;
+    let cropper, currentRot = 0;
     const img = document.getElementById('image-to-crop'), vid = document.getElementById('video');
     const phoneDisp = document.getElementById('phone-display'), nameInput = document.getElementById('name-input');
-    const flashBtn = document.getElementById('flash-toggle'), focusFrame = document.getElementById('focus-frame'), previewBox = document.getElementById('preview-box'), statusTxt = document.getElementById('status');
-
-    function arToEn(str) { return str.replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d)); }
-
-    async function initWorker() {
-        worker = await Tesseract.createWorker({ workerPath: './worker.min.js', langPath: './', corePath: './tesseract-core.wasm.js' });
-        await worker.loadLanguage('ara+eng');
-        await worker.initialize('ara+eng');
-        await worker.setParameters({ tessedit_char_whitelist: '0123456789٠١٢٣٤٥٦٧٨٩' });
-        statusTxt.innerText = "جاهز ✅";
-    }
-    window.onload = initWorker;
+    const msgText = document.getElementById('msg-text'), chipsDiv = document.getElementById('chips');
+    let savedMsgs = JSON.parse(localStorage.getItem('user_msgs')) || ["تم استلام الطلب.", "الطلب جاهز."];
 
     document.getElementById('btn-camera').onclick = async () => {
         const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-        vid.srcObject = stream; vid.style.display = "block"; focusFrame.style.display = "block";
-        track = stream.getVideoTracks()[0];
-        if (track.getCapabilities().torch) flashBtn.style.display = "flex";
+        vid.srcObject = stream; vid.style.display = "block";
         document.getElementById('btn-camera').innerText = "📸 التقاط";
         document.getElementById('btn-camera').onclick = () => {
             const c = document.createElement('canvas');
             c.width = vid.videoWidth; c.height = vid.videoHeight;
             c.getContext('2d').drawImage(vid, 0, 0);
             initCrop(c.toDataURL('image/png'));
-            stream.getTracks().forEach(t => t.stop()); vid.style.display = "none"; focusFrame.style.display = "none"; flashBtn.style.display = "none";
+            stream.getTracks().forEach(t => t.stop()); vid.style.display = "none";
         };
     };
-
-    flashBtn.onclick = () => { flashOn = !flashOn; track.applyConstraints({ advanced: [{ torch: flashOn }] }); };
 
     document.getElementById('file-in').onchange = (e) => {
         const r = new FileReader(); r.onload = (ev) => initCrop(ev.target.result); r.readAsDataURL(e.target.files[0]);
     };
 
     function initCrop(src) {
-        img.src = src; img.style.display = "block"; document.getElementById('init-btns').style.display = "none"; document.getElementById('crop-btns').style.display = "block";
+        img.src = src; img.style.display = "block";
+        document.getElementById('init-btns').style.display = "none";
+        document.getElementById('crop-btns').style.display = "block";
         if (cropper) cropper.destroy();
-        setTimeout(() => {
-            cropper = new Cropper(img, { viewMode: 1, autoCropArea: 0.8, ready() {
-                const cont = cropper.getContainerData();
-                cropper.setCropBoxData({ left: cont.width*0.1, top: (cont.height/2)-60, width: cont.width*0.8, height: 120 });
-            }});
-        }, 150);
+        cropper = new Cropper(img, { viewMode: 1, autoCropArea: 0.8 });
     }
 
-    document.getElementById('rot-slider').oninput = function() { let val = parseInt(this.value); cropper.rotate(val - currentRot); currentRot = val; };
-
-    document.getElementById('btn-ocr-off').onclick = async () => {
-        statusTxt.innerText = "تحليل أوفلاين... ⚡";
-        previewBox.classList.add('compact');
-        const { data: { text } } = await worker.recognize(cropper.getCroppedCanvas().toDataURL());
-        showResult(text);
+    document.getElementById('rot-slider').oninput = function() {
+        let a = parseInt(this.value);
+        cropper.rotate(a - currentRot);
+        currentRot = a;
     };
 
-    document.getElementById('btn-ocr-on').onclick = async () => {
-        statusTxt.innerText = "تحليل أونلاين... 🚀";
-        previewBox.classList.add('compact');
-        const blob = await new Promise(res => cropper.getCroppedCanvas().toBlob(res, 'image/jpeg'));
-        const fd = new FormData(); fd.append('file', blob);
-        const resp = await fetch('https://api.ocr.space/parse/image', { method: 'POST', headers: { 'apikey': 'K88536968888957' }, body: fd });
-        const data = await resp.json();
-        showResult(data.ParsedResults[0].ParsedText);
+    document.getElementById('btn-ocr').onclick = () => {
+        const canvas = cropper.getCroppedCanvas({ imageSmoothingHigh: true });
+        document.getElementById('status').innerText = "قراءة... ⏳";
+        Tesseract.recognize(canvas.toDataURL(), 'eng+ara').then(({ data: { text } }) => {
+            const p = text.replace(/[\s-]/g, '').match(/01[0125][0-9]{8}/);
+            const lines = text.split('\n').filter(l => l.trim().length > 2);
+            nameInput.value = lines[0] ? lines[0].replace(/العميل|Name|:|Customer/gi, '').trim() : "عميل";
+            phoneDisp.innerText = p ? p[0] : "";
+            document.getElementById('result-ui').style.display = "block";
+            document.getElementById('crop-btns').style.display = "none";
+            document.getElementById('status').innerText = "تم ✅";
+            cropper.destroy();
+            img.src = canvas.toDataURL();
+            img.style.display = "block";
+        });
     };
 
-    function showResult(text) {
-        let clean = arToEn(text.replace(/[^0-9٠-٩]/g, ''));
-        const p = clean.match(/01[0125][0-9]{8}/);
-        phoneDisp.innerText = p ? p[0] : "لم يعثر على رقم";
-        nameInput.value = text.split('\n')[0].trim() || "عميل";
-        document.getElementById('result-ui').style.display = "block";
-        document.getElementById('crop-btns').style.display = "none";
-        statusTxt.innerText = "تمت العملية ✅";
-        img.src = cropper.getCroppedCanvas().toDataURL();
-        cropper.destroy();
+    function toggleKB() {
+        const kb = document.getElementById('mini-kb');
+        kb.style.display = (kb.style.display === 'grid') ? 'none' : 'grid';
     }
 
-    function toggleKB() { const kb = document.getElementById('mini-kb'); kb.style.display = (kb.style.display === 'grid') ? 'none' : 'grid'; }
-    window.press = (v) => { if (v === 'C') phoneDisp.innerText = ''; else if (v === 'X') phoneDisp.innerText = phoneDisp.innerText.slice(0, -1); else if (phoneDisp.innerText.length < 11) phoneDisp.innerText += v; };
-    document.getElementById('btn-wa').onclick = () => window.open(`https://wa.me/2${phoneDisp.innerText}`);
+    window.press = (v) => {
+        if (v === 'C') phoneDisp.innerText = '';
+        else if (v === 'X') phoneDisp.innerText = phoneDisp.innerText.slice(0, -1);
+        else if (phoneDisp.innerText.length < 11) phoneDisp.innerText += v;
+    };
+
+    function renderChips() {
+        chipsDiv.innerHTML = '';
+        savedMsgs.forEach(m => {
+            const c = document.createElement('div'); c.className = 'chip';
+            c.innerText = m.substring(0, 10) + '..';
+            c.onclick = () => msgText.value = m;
+            chipsDiv.appendChild(c);
+        });
+    }
+
+    document.getElementById('btn-wa').onclick = () => window.open(`https://wa.me/2${phoneDisp.innerText}?text=${encodeURIComponent(msgText.value)}`);
     document.getElementById('btn-call').onclick = () => window.location.href = `tel:${phoneDisp.innerText}`;
     document.getElementById('btn-vcf').onclick = () => {
         const vcf = `BEGIN:VCARD\nVERSION:3.0\nFN:${nameInput.value}\nTEL;TYPE=CELL:${phoneDisp.innerText}\nEND:VCARD`;
-        const a = document.createElement('a'); a.download = `${nameInput.value}.vcf`; a.href = URL.createObjectURL(new Blob([vcf], {type: "text/vcard"})); a.click();
+        const a = document.createElement('a');
+        a.download = `${nameInput.value}.vcf`;
+        a.href = URL.createObjectURL(new Blob([vcf], {type: "text/vcard"}));
+        a.click();
     };
-    if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(e => console.log(e)); }); }
+
+    renderChips();
 </script>
 </body>
 </html>
