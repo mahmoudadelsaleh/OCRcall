@@ -82,22 +82,25 @@
             position: relative;
         }
 
-        /* معاينة الكاميرا */
+        /* معاينة الكاميرا - تم تقليل الارتفاع للنصف */
         .camera-preview {
             position: relative;
             background: #000;
             overflow: hidden;
             transition: all 0.3s ease;
+            height: 35vh; /* 35% من ارتفاع الشاشة */
+            min-height: 180px;
         }
 
         .camera-preview.full {
-            flex: 1;
-            min-height: 200px;
+            height: 35vh; /* نفس الارتفاع */
+            min-height: 180px;
         }
 
         .camera-preview.compact {
-            height: 150px;
+            height: 100px; /* تصغير أكبر عند التصغير */
             flex-shrink: 0;
+            min-height: 100px;
         }
 
         #video, #image-preview {
@@ -106,7 +109,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            object-fit: contain;
+            object-fit: cover; /* تغيير من contain إلى cover لملء المساحة */
         }
 
         .camera-preview.compact #image-preview {
@@ -117,11 +120,11 @@
         /* إطار التركيز - تحسين للرقم العلوي */
         .focus-frame {
             position: absolute;
-            top: 30%;
+            top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             width: 85%;
-            height: 100px;
+            height: 80px;
             border: 2px solid var(--warning);
             border-radius: 12px;
             box-shadow: 0 0 0 2000px rgba(0,0,0,0.6);
@@ -192,9 +195,17 @@
             color: white;
         }
 
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
         .btn-success {
             background: var(--success);
             color: white;
+        }
+
+        .btn-success:hover {
+            background: var(--success-dark);
         }
 
         .btn-danger {
@@ -744,7 +755,6 @@
             request.onerror = () => reject(request.error);
             request.onsuccess = () => {
                 db = request.result;
-                // الحصول على أكبر ID
                 const tx = db.transaction(['scans'], 'readonly');
                 const store = tx.objectStore('scans');
                 const cursor = store.openCursor(null, 'prev');
@@ -834,7 +844,7 @@
         }
         
         historyList.innerHTML = scans.map(scan => `
-            <div class="history-item" onclick="loadScanToMain(${scan.id})">
+            <div class="history-item" onclick="window.loadScanToMain(${scan.id})">
                 <div>
                     <span class="history-number">#${scan.id}</span>
                     <span class="history-name">${escapeHtml(scan.name)}</span>
@@ -859,8 +869,6 @@
                 phoneDisplay.innerText = scan.phone;
                 messageInput.value = scan.message || '';
                 statusDiv.innerHTML = '<i class="fas fa-check-circle"></i> ✅ تم تحميل البيانات من السجل';
-                
-                // التبديل إلى التبويب الرئيسي
                 document.querySelector('.tab[data-tab="main"]').click();
             }
         };
@@ -883,28 +891,6 @@
             request.onerror = () => {
                 showError('فشل مسح الكاش');
             };
-        }
-    }
-
-    // مسح كاش الموقع (localStorage + IndexedDB)
-    async function clearSiteCache() {
-        if (confirm('⚠️ هل تريد مسح كاش التطبيق بالكامل؟\nسيتم حذف جميع البيانات وسيتم تحديث الصفحة!')) {
-            // مسح IndexedDB
-            const tx = db.transaction(['scans'], 'readwrite');
-            const store = tx.objectStore('scans');
-            await store.clear();
-            
-            // مسح localStorage
-            localStorage.clear();
-            
-            // مسح Cache API إذا كان متاح
-            if ('caches' in window) {
-                const keys = await caches.keys();
-                await Promise.all(keys.map(key => caches.delete(key)));
-            }
-            
-            statusDiv.innerHTML = '<i class="fas fa-check-circle"></i> 🗑️ تم مسح الكاش، جاري التحديث...';
-            setTimeout(() => location.reload(), 1500);
         }
     }
 
@@ -1066,11 +1052,9 @@
                     cropBoxMovable: true,
                     cropBoxResizable: true
                 });
-                // تحريك منطقة القص للأعلى قليلاً للتركيز على الرقم
                 setTimeout(() => {
                     if (cropper) {
                         const containerData = cropper.getContainerData();
-                        const cropBoxData = cropper.getCropBoxData();
                         cropper.setCropBoxData({
                             top: containerData.height * 0.2
                         });
