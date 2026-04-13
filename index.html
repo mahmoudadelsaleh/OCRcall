@@ -3,15 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>OCR Call - Almas Solutions</title>
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#000000">
-    
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+    <title>OCR Call - Offline Pro</title>
+    <script src="tesseract.min.js"></script>
+    <link rel="stylesheet" href="cropper.min.css">
+    <script src="cropper.min.js"></script>
 
     <style>
+        /* ... نفس الستايل اللي عملناه بالظبط بدون أي حذف ... */
         :root { --primary: #007bff; --success: #28a745; --danger: #dc3545; --warning: #f39c12; --bg: #f4f7f6; --gold: #d4af37; }
         html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; background: var(--bg); font-family: sans-serif; }
         .main-wrapper { display: flex; flex-direction: column; height: 100vh; max-width: 500px; margin: auto; background: white; position: relative; }
@@ -46,7 +44,6 @@
         <video id="video" autoplay playsinline></video>
         <img id="image-to-crop" style="display:none;">
     </div>
-
     <div class="controls-section">
         <div id="status" style="font-size:12px; font-weight:bold; color:var(--primary); margin-bottom:5px;"></div>
         <div id="init-btns" style="width:100%; display:flex; flex-direction:column; gap:10px;">
@@ -54,13 +51,11 @@
             <label class="btn btn-primary" style="background:#6c757d;" for="file-in">📁 رفع صورة</label>
             <input type="file" id="file-in" accept="image/*" style="display:none;">
         </div>
-
         <div id="crop-btns" style="display:none; width:100%; text-align:center;">
             <input type="range" id="rot-slider" min="-180" max="180" step="1" value="0" style="width:90%; margin: 10px 0;">
             <button class="btn btn-success" id="btn-ocr">🔍 قراءة البيانات (دقة عالية)</button>
             <button class="btn btn-danger" onclick="location.reload()">🔄 إلغاء</button>
         </div>
-
         <div id="result-ui" style="display:none; width:100%; text-align:center;">
             <input type="text" id="name-input" class="edit-field">
             <div class="phone-val" id="phone-display"></div>
@@ -74,14 +69,8 @@
             <div class="chips-container" id="chips"></div>
             <textarea id="msg-text" class="edit-field" rows="1" style="font-size: 13px;"></textarea>
             <div class="action-grid-custom">
-                <div class="right-side">
-                    <button class="btn btn-success" id="btn-wa">💬 واتساب</button>
-                    <button class="btn btn-primary" id="btn-call">📞 اتصال</button>
-                </div>
-                <div class="left-side">
-                    <button class="btn btn-warning" id="btn-vcf">👤 حفظ</button>
-                    <button class="btn btn-danger" onclick="location.reload()">🔄 جديد</button>
-                </div>
+                <div class="right-side"><button class="btn btn-success" id="btn-wa">💬 واتساب</button><button class="btn btn-primary" id="btn-call">📞 اتصال</button></div>
+                <div class="left-side"><button class="btn btn-warning" id="btn-vcf">👤 حفظ</button><button class="btn btn-danger" onclick="location.reload()">🔄 جديد</button></div>
             </div>
         </div>
     </div>
@@ -89,6 +78,7 @@
 </div>
 
 <script>
+    /* ... المتغيرات والوظائف الأساسية ... */
     let cropper, currentRot = 0, track = null, flashOn = false;
     const img = document.getElementById('image-to-crop'), vid = document.getElementById('video');
     const phoneDisp = document.getElementById('phone-display'), nameInput = document.getElementById('name-input');
@@ -98,6 +88,62 @@
 
     function arToEn(str) { return str.replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d)); }
 
+    // إعداد الـ OCR للعمل أوفلاين
+    async function runOCR(canvas) {
+        document.getElementById('status').innerText = "جاري المعالجة أوفلاين... ⚡";
+        
+        // هنا السر: لازم نحدد مسارات الملفات اللي أنت نزلتها
+        const worker = await Tesseract.createWorker({
+            workerPath: './worker.min.js', // ملف الووركر محلي
+            langPath: './',               // مجلد ملفات اللغة (ara.traineddata)
+            corePath: './tesseract-core.wasm.js', // ملف الكور محلي
+            logger: m => console.log(m)
+        });
+
+        await worker.loadLanguage('ara+eng');
+        await worker.initialize('ara+eng');
+        await worker.setParameters({
+            tessedit_char_whitelist: '0123456789٠١٢٣٤٥٦٧٨٩abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZأبجد هوز حطي كلمن سعفص قرشت ثخذ ضظغ',
+        });
+
+        const { data: { text } } = await worker.recognize(canvas.toDataURL());
+        await worker.terminate();
+        return text;
+    }
+
+    document.getElementById('btn-ocr').onclick = async () => {
+        const canvas = cropper.getCroppedCanvas();
+        // معالجة الصورة (أبيض وأسود) لزيادة الدقة
+        const ctx = canvas.getContext('2d');
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        for (let i = 0; i < imageData.data.length; i += 4) {
+            const avg = (imageData.data[i] + imageData.data[i + 1] + imageData.data[i + 2]) / 3;
+            const val = avg > 128 ? 255 : 0;
+            imageData.data[i] = imageData.data[i+1] = imageData.data[i+2] = val;
+        }
+        ctx.putImageData(imageData, 0, 0);
+
+        previewBox.classList.add('compact');
+        
+        try {
+            const text = await runOCR(canvas);
+            let cleanText = arToEn(text.replace(/[^0125٠١٢٥٠-٩0-9]/g, ''));
+            const p = cleanText.match(/01[0125][0-9]{8}/);
+            
+            phoneDisp.innerText = p ? p[0] : "لم يتم العثور على رقم";
+            nameInput.value = text.split('\n')[0].trim() || "عميل";
+            document.getElementById('result-ui').style.display = "block";
+            document.getElementById('crop-btns').style.display = "none";
+            document.getElementById('status').innerText = "";
+            img.src = canvas.toDataURL();
+            cropper.destroy();
+        } catch (e) {
+            document.getElementById('status').innerText = "خطأ: تأكد من وجود ملفات اللغة بجانب الـ index";
+            console.error(e);
+        }
+    };
+
+    /* ... باقي الكود (الكيبورد، الكاميرا، الخ) ... */
     document.getElementById('btn-camera').onclick = async () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
@@ -115,24 +161,13 @@
             };
         } catch(e) { alert("صلاحية الكاميرا مطلوبة"); }
     };
-
-    flashBtn.onclick = () => {
-        flashOn = !flashOn; track.applyConstraints({ advanced: [{ torch: flashOn }] });
-    };
-
+    flashBtn.onclick = () => { flashOn = !flashOn; track.applyConstraints({ advanced: [{ torch: flashOn }] }); };
     document.getElementById('file-in').onchange = (e) => {
         const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (ev) => initCrop(ev.target.result);
-            reader.readAsDataURL(file);
-        }
+        if (file) { const reader = new FileReader(); reader.onload = (ev) => initCrop(ev.target.result); reader.readAsDataURL(file); }
     };
-
     function initCrop(src) {
-        img.src = src; img.style.display = "block";
-        document.getElementById('init-btns').style.display = "none";
-        document.getElementById('crop-btns').style.display = "block";
+        img.src = src; img.style.display = "block"; document.getElementById('init-btns').style.display = "none"; document.getElementById('crop-btns').style.display = "block";
         if (cropper) cropper.destroy();
         setTimeout(() => {
             cropper = new Cropper(img, {
@@ -144,73 +179,15 @@
             });
         }, 150);
     }
-
-    document.getElementById('rot-slider').oninput = function() {
-        let val = parseInt(this.value); cropper.rotate(val - currentRot); currentRot = val;
-    };
-
-    document.getElementById('btn-ocr').onclick = async () => {
-        // تحسين الصورة قبل الإرسال (Contrast & Grayscale)
-        const canvas = cropper.getCroppedCanvas();
-        const ctx = canvas.getContext('2d');
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const data = imageData.data;
-        for (let i = 0; i < data.length; i += 4) {
-            const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
-            const val = avg > 128 ? 255 : 0; // تحويل ثنائي عالي التباين
-            data[i] = data[i+1] = data[i+2] = val;
-        }
-        ctx.putImageData(imageData, 0, 0);
-
-        document.getElementById('status').innerText = "جاري القراءة بدقة... ⏳";
-        previewBox.classList.add('compact');
-
-        const worker = await Tesseract.createWorker('ara+eng');
-        // إعدادات تجبره على التركيز على الأرقام
-        await worker.setParameters({
-            tessedit_char_whitelist: '0123456789٠١٢٣٤٥٦٧٨٩abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZأبجد هوز حطي كلمن سعفص قرشت ثخذ ضظغ',
-        });
-        
-        const { data: { text } } = await worker.recognize(canvas.toDataURL());
-        let cleanText = arToEn(text.replace(/[^0125٠١٢٥٠-٩0-9]/g, ''));
-        const p = cleanText.match(/01[0125][0-9]{8}/);
-        
-        phoneDisp.innerText = p ? p[0] : "تأكد من وضوح الرقم";
-        nameInput.value = text.split('\n')[0].trim() || "عميل";
-        document.getElementById('result-ui').style.display = "block";
-        document.getElementById('crop-btns').style.display = "none";
-        document.getElementById('status').innerText = "";
-        img.src = canvas.toDataURL();
-        cropper.destroy();
-        await worker.terminate();
-    };
-
-    function toggleKB() {
-        const kb = document.getElementById('mini-kb');
-        kb.style.display = (kb.style.display === 'grid') ? 'none' : 'grid';
-    }
-    window.press = (v) => {
-        if (v === 'C') phoneDisp.innerText = '';
-        else if (v === 'X') phoneDisp.innerText = phoneDisp.innerText.slice(0, -1);
-        else if (phoneDisp.innerText.length < 11) phoneDisp.innerText += v;
-    };
-    function renderChips() {
-        chipsDiv.innerHTML = '';
-        savedMsgs.forEach(m => {
-            const c = document.createElement('div'); c.className = 'chip';
-            c.innerText = m.substring(0, 15) + '..';
-            c.onclick = () => msgText.value = m;
-            chipsDiv.appendChild(c);
-        });
-    }
+    document.getElementById('rot-slider').oninput = function() { let val = parseInt(this.value); cropper.rotate(val - currentRot); currentRot = val; };
+    function toggleKB() { const kb = document.getElementById('mini-kb'); kb.style.display = (kb.style.display === 'grid') ? 'none' : 'grid'; }
+    window.press = (v) => { if (v === 'C') phoneDisp.innerText = ''; else if (v === 'X') phoneDisp.innerText = phoneDisp.innerText.slice(0, -1); else if (phoneDisp.innerText.length < 11) phoneDisp.innerText += v; };
+    function renderChips() { chipsDiv.innerHTML = ''; savedMsgs.forEach(m => { const c = document.createElement('div'); c.className = 'chip'; c.innerText = m.substring(0, 15) + '..'; c.onclick = () => msgText.value = m; chipsDiv.appendChild(c); }); }
     document.getElementById('btn-wa').onclick = () => window.open(`https://wa.me/2${phoneDisp.innerText}?text=${encodeURIComponent(msgText.value)}`);
     document.getElementById('btn-call').onclick = () => window.location.href = `tel:${phoneDisp.innerText}`;
     document.getElementById('btn-vcf').onclick = () => {
         const vcf = `BEGIN:VCARD\nVERSION:3.0\nFN:${nameInput.value}\nTEL;TYPE=CELL:${phoneDisp.innerText}\nEND:VCARD`;
-        const a = document.createElement('a');
-        a.download = `${nameInput.value}.vcf`;
-        a.href = URL.createObjectURL(new Blob([vcf], {type: "text/vcard"}));
-        a.click();
+        const a = document.createElement('a'); a.download = `${nameInput.value}.vcf`; a.href = URL.createObjectURL(new Blob([vcf], {type: "text/vcard"})); a.click();
     };
     renderChips();
 </script>
