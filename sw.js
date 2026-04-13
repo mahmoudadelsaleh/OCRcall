@@ -7,8 +7,6 @@ const urlsToCache = [
   './tesseract.min.js',
   './worker.min.js',
   './tesseract-core.wasm.js',
-  './ara.traineddata',
-  './eng.traineddata',
   './cropper.min.js',
   './cropper.min.css',
   './icon-192x192.png',
