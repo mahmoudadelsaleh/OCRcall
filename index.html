@@ -11,10 +11,6 @@
     
     <title>OCRcall²⁰²⁶ | Almas Solutions</title>
     
-    <!-- إزالة مراجع الملفات غير الموجودة -->
-    <!-- <link rel="manifest" href="manifest.json"> -->
-    <!-- <link rel="apple-touch-icon" href="icon-192x192.png"> -->
-    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -114,17 +110,18 @@
         }
 
         .camera-preview.compact #image-preview {
-            object-fit: cover;
+            object-fit: contain;
+            object-position: top center;
         }
 
-        /* إطار التركيز */
+        /* إطار التركيز - تحسين للرقم العلوي */
         .focus-frame {
             position: absolute;
-            top: 50%;
+            top: 30%;
             left: 50%;
             transform: translate(-50%, -50%);
             width: 85%;
-            height: 120px;
+            height: 100px;
             border: 2px solid var(--warning);
             border-radius: 12px;
             box-shadow: 0 0 0 2000px rgba(0,0,0,0.6);
@@ -195,17 +192,9 @@
             color: white;
         }
 
-        .btn-primary:hover {
-            background: var(--primary-dark);
-        }
-
         .btn-success {
             background: var(--success);
             color: white;
-        }
-
-        .btn-success:hover {
-            background: var(--success-dark);
         }
 
         .btn-danger {
@@ -220,6 +209,11 @@
 
         .btn-warning {
             background: var(--warning);
+            color: white;
+        }
+
+        .btn-info {
+            background: #17a2b8;
             color: white;
         }
 
@@ -353,6 +347,74 @@
             gap: 12px;
         }
 
+        /* سجل المسح */
+        .history-section {
+            margin-top: 20px;
+            border-top: 2px solid var(--gold);
+            padding-top: 15px;
+        }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .history-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--dark);
+        }
+
+        .history-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            background: var(--light-gray);
+            padding: 12px;
+            border-radius: 12px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .history-item:active {
+            transform: scale(0.98);
+        }
+
+        .history-number {
+            font-weight: bold;
+            color: var(--primary);
+            margin-left: 8px;
+        }
+
+        .history-name {
+            font-weight: bold;
+            color: var(--dark);
+        }
+
+        .history-phone {
+            color: var(--danger);
+            direction: ltr;
+            display: inline-block;
+        }
+
+        .history-date {
+            font-size: 11px;
+            color: var(--gray);
+            margin-top: 5px;
+        }
+
+        .history-message {
+            font-size: 12px;
+            color: var(--success);
+            margin-top: 5px;
+            font-style: italic;
+        }
+
         /* الفوتر الاحترافي */
         .footer {
             background: linear-gradient(135deg, var(--dark) 0%, #2a2a2e 100%);
@@ -392,18 +454,6 @@
         @keyframes shine {
             0%, 100% { opacity: 0.7; }
             50% { opacity: 1; text-shadow: 0 0 5px var(--gold); }
-        }
-
-        .footer-text {
-            letter-spacing: 1px;
-        }
-
-        .footer-badge {
-            font-size: 10px;
-            background: rgba(212, 175, 55, 0.2);
-            padding: 2px 6px;
-            border-radius: 10px;
-            margin-right: 5px;
         }
 
         /* شاشة التحميل */
@@ -453,9 +503,45 @@
             display: none;
         }
 
-        /* أيقونات افتراضية إذا لم تكن موجودة */
-        .default-icon {
+        /* تبويبات */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            background: var(--light-gray);
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .tab.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .tab-content {
             display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .clear-cache-btn {
+            background: var(--danger);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
         }
     </style>
 </head>
@@ -511,62 +597,88 @@
             </button>
         </div>
 
-        <!-- شاشة النتائج -->
+        <!-- شاشة النتائج مع التبويبات -->
         <div id="resultScreen" style="display: none;">
-            <button class="btn btn-secondary" id="retryOcrBtn" style="display: none;">
-                <i class="fas fa-redo-alt"></i> محاولة مرة أخرى
-            </button>
-
-            <div class="name-field">
-                <input type="text" id="customerName" placeholder="اسم العميل" autocomplete="off">
-                <button class="clear-name" onclick="document.getElementById('customerName').value = ''">
-                    <i class="fas fa-times"></i>
-                </button>
+            <div class="tabs">
+                <div class="tab active" data-tab="main">📝 رئيسي</div>
+                <div class="tab" data-tab="history">📋 السجل</div>
             </div>
 
-            <div class="phone-number" id="phoneNumber"></div>
+            <!-- المحتوى الرئيسي -->
+            <div id="mainTab" class="tab-content active">
+                <button class="btn btn-secondary" id="retryOcrBtn" style="display: none;">
+                    <i class="fas fa-redo-alt"></i> محاولة مرة أخرى
+                </button>
 
-            <div class="keyboard" id="keyboard">
-                <div class="key" onclick="window.addDigit('9')">9</div>
-                <div class="key" onclick="window.addDigit('8')">8</div>
-                <div class="key" onclick="window.addDigit('7')">7</div>
-                <div class="key" onclick="window.addDigit('6')">6</div>
-                <div class="key" onclick="window.addDigit('5')">5</div>
-                <div class="key" onclick="window.addDigit('4')">4</div>
-                <div class="key" onclick="window.addDigit('3')">3</div>
-                <div class="key" onclick="window.addDigit('2')">2</div>
-                <div class="key" onclick="window.addDigit('1')">1</div>
-                <div class="key" style="background: var(--danger); color: white;" onclick="window.deleteDigit()">
-                    <i class="fas fa-backspace"></i>
+                <div class="name-field">
+                    <input type="text" id="customerName" placeholder="اسم العميل" autocomplete="off">
+                    <button class="clear-name" onclick="document.getElementById('customerName').value = ''">
+                        <i class="fas fa-times"></i>
+                    </button>
                 </div>
-                <div class="key" onclick="window.addDigit('0')">0</div>
-                <div class="key" style="background: var(--gray); color: white;" onclick="window.clearPhone()">
-                    C
+
+                <div class="phone-number" id="phoneNumber"></div>
+
+                <div class="keyboard" id="keyboard">
+                    <div class="key" onclick="window.addDigit('9')">9</div>
+                    <div class="key" onclick="window.addDigit('8')">8</div>
+                    <div class="key" onclick="window.addDigit('7')">7</div>
+                    <div class="key" onclick="window.addDigit('6')">6</div>
+                    <div class="key" onclick="window.addDigit('5')">5</div>
+                    <div class="key" onclick="window.addDigit('4')">4</div>
+                    <div class="key" onclick="window.addDigit('3')">3</div>
+                    <div class="key" onclick="window.addDigit('2')">2</div>
+                    <div class="key" onclick="window.addDigit('1')">1</div>
+                    <div class="key" style="background: var(--danger); color: white;" onclick="window.deleteDigit()">
+                        <i class="fas fa-backspace"></i>
+                    </div>
+                    <div class="key" onclick="window.addDigit('0')">0</div>
+                    <div class="key" style="background: var(--gray); color: white;" onclick="window.clearPhone()">
+                        C
+                    </div>
+                </div>
+
+                <div class="chips">
+                    <div class="chip" onclick="window.setQuickMessage('✅ تم استلام طلبك بنجاح')">📦 استلام</div>
+                    <div class="chip" onclick="window.setQuickMessage('🚚 طلبك جاهز للتسليم')">✅ جاهز</div>
+                    <div class="chip" onclick="window.setQuickMessage('🛵 المندوب في الطريق إليك')">🚚 بالطريق</div>
+                    <div class="chip" onclick="window.setQuickMessage('🎉 تم التوصيل شكراً لك')">🎁 تم التوصيل</div>
+                </div>
+
+                <textarea id="messageInput" placeholder="📝 رسالة مخصصة..."></textarea>
+
+                <div class="action-buttons">
+                    <button class="btn btn-primary" id="callBtn">
+                        <i class="fas fa-phone"></i> اتصال
+                    </button>
+                    <button class="btn btn-success" id="whatsappBtn">
+                        <i class="fab fa-whatsapp"></i> واتساب
+                    </button>
+                    <button class="btn btn-warning" id="saveContactBtn">
+                        <i class="fas fa-user-plus"></i> حفظ
+                    </button>
+                    <button class="btn btn-info" id="saveToHistoryBtn">
+                        <i class="fas fa-save"></i> حفظ بالسجل
+                    </button>
+                    <button class="btn btn-danger" id="newBtn">
+                        <i class="fas fa-redo-alt"></i> جديد
+                    </button>
                 </div>
             </div>
 
-            <div class="chips">
-                <div class="chip" onclick="window.setQuickMessage('✅ تم استلام طلبك بنجاح')">📦 استلام</div>
-                <div class="chip" onclick="window.setQuickMessage('🚚 طلبك جاهز للتسليم')">✅ جاهز</div>
-                <div class="chip" onclick="window.setQuickMessage('🛵 المندوب في الطريق إليك')">🚚 بالطريق</div>
-                <div class="chip" onclick="window.setQuickMessage('🎉 تم التوصيل شكراً لك')">🎁 تم التوصيل</div>
-            </div>
-
-            <textarea id="messageInput" placeholder="📝 اكتب رسالتك هنا..."></textarea>
-
-            <div class="action-buttons">
-                <button class="btn btn-primary" id="callBtn">
-                    <i class="fas fa-phone"></i> اتصال
-                </button>
-                <button class="btn btn-success" id="whatsappBtn">
-                    <i class="fab fa-whatsapp"></i> واتساب
-                </button>
-                <button class="btn btn-warning" id="saveContactBtn">
-                    <i class="fas fa-user-plus"></i> حفظ
-                </button>
-                <button class="btn btn-danger" id="newBtn">
-                    <i class="fas fa-redo-alt"></i> جديد
-                </button>
+            <!-- سجل المسح -->
+            <div id="historyTab" class="tab-content">
+                <div class="history-header">
+                    <span class="history-title">📋 سجل المسح اليومي</span>
+                    <button class="clear-cache-btn" id="clearHistoryBtn">
+                        <i class="fas fa-trash"></i> مسح الكاش
+                    </button>
+                </div>
+                <div id="historyList" class="history-list">
+                    <div style="text-align: center; padding: 20px; color: var(--gray);">
+                        لا توجد بيانات في السجل
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -589,7 +701,6 @@
     </div>
 </div>
 
-<!-- استخدام CDN للمكتبات -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
@@ -601,6 +712,8 @@
     let torchEnabled = false;
     let lastImageData = null;
     let tesseractReady = false;
+    let db = null;
+    let nextId = 1;
     
     // العناصر DOM
     const video = document.getElementById('video');
@@ -621,6 +734,179 @@
     const loadingOverlay = document.getElementById('loadingOverlay');
     const offlineIndicator = document.getElementById('offlineIndicator');
     const loadingText = document.getElementById('loadingText');
+    const historyList = document.getElementById('historyList');
+
+    // فتح قاعدة البيانات
+    function openDatabase() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open('OCRcallDB', 1);
+            
+            request.onerror = () => reject(request.error);
+            request.onsuccess = () => {
+                db = request.result;
+                // الحصول على أكبر ID
+                const tx = db.transaction(['scans'], 'readonly');
+                const store = tx.objectStore('scans');
+                const cursor = store.openCursor(null, 'prev');
+                cursor.onsuccess = (e) => {
+                    const cursor = e.target.result;
+                    if (cursor) {
+                        nextId = cursor.value.id + 1;
+                    }
+                    resolve();
+                };
+            };
+            
+            request.onupgradeneeded = (e) => {
+                const db = e.target.result;
+                if (!db.objectStoreNames.contains('scans')) {
+                    const store = db.createObjectStore('scans', { keyPath: 'id', autoIncrement: true });
+                    store.createIndex('date', 'date');
+                }
+            };
+        });
+    }
+
+    // حفظ مسح جديد
+    async function saveScan(name, phone, message) {
+        if (!phone) {
+            showError('لا يوجد رقم هاتف للحفظ');
+            return false;
+        }
+        
+        const scan = {
+            id: nextId++,
+            name: name || 'عميل',
+            phone: phone,
+            message: message || '',
+            date: new Date().toISOString(),
+            dateFormatted: new Date().toLocaleString('ar-EG')
+        };
+        
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(['scans'], 'readwrite');
+            const store = tx.objectStore('scans');
+            const request = store.add(scan);
+            
+            request.onsuccess = () => {
+                statusDiv.innerHTML = '<i class="fas fa-check-circle"></i> ✅ تم حفظ البيانات في السجل';
+                loadHistory();
+                resolve(true);
+            };
+            
+            request.onerror = () => {
+                showError('فشل حفظ البيانات');
+                reject(request.error);
+            };
+        });
+    }
+
+    // تحميل السجل
+    async function loadHistory() {
+        if (!db) return;
+        
+        return new Promise((resolve) => {
+            const tx = db.transaction(['scans'], 'readonly');
+            const store = tx.objectStore('scans');
+            const index = store.index('date');
+            const scans = [];
+            
+            index.openCursor(null, 'prev').onsuccess = (e) => {
+                const cursor = e.target.result;
+                if (cursor) {
+                    scans.push(cursor.value);
+                    cursor.continue();
+                } else {
+                    displayHistory(scans);
+                    resolve(scans);
+                }
+            };
+        });
+    }
+
+    // عرض السجل
+    function displayHistory(scans) {
+        if (!historyList) return;
+        
+        if (scans.length === 0) {
+            historyList.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--gray);">📭 لا توجد بيانات في السجل</div>';
+            return;
+        }
+        
+        historyList.innerHTML = scans.map(scan => `
+            <div class="history-item" onclick="loadScanToMain(${scan.id})">
+                <div>
+                    <span class="history-number">#${scan.id}</span>
+                    <span class="history-name">${escapeHtml(scan.name)}</span>
+                </div>
+                <div class="history-phone">📞 ${scan.phone}</div>
+                ${scan.message ? `<div class="history-message">💬 ${escapeHtml(scan.message.substring(0, 50))}${scan.message.length > 50 ? '...' : ''}</div>` : ''}
+                <div class="history-date">📅 ${scan.dateFormatted}</div>
+            </div>
+        `).join('');
+    }
+
+    // تحميل مسح إلى الواجهة الرئيسية
+    window.loadScanToMain = function(id) {
+        const tx = db.transaction(['scans'], 'readonly');
+        const store = tx.objectStore('scans');
+        const request = store.get(id);
+        
+        request.onsuccess = () => {
+            const scan = request.result;
+            if (scan) {
+                customerNameInput.value = scan.name;
+                phoneDisplay.innerText = scan.phone;
+                messageInput.value = scan.message || '';
+                statusDiv.innerHTML = '<i class="fas fa-check-circle"></i> ✅ تم تحميل البيانات من السجل';
+                
+                // التبديل إلى التبويب الرئيسي
+                document.querySelector('.tab[data-tab="main"]').click();
+            }
+        };
+    };
+
+    // مسح الكاش بالكامل
+    async function clearAllCache() {
+        if (confirm('⚠️ هل أنت متأكد من مسح جميع بيانات السجل؟\nلا يمكن التراجع عن هذا الإجراء!')) {
+            const tx = db.transaction(['scans'], 'readwrite');
+            const store = tx.objectStore('scans');
+            const request = store.clear();
+            
+            request.onsuccess = () => {
+                nextId = 1;
+                loadHistory();
+                statusDiv.innerHTML = '<i class="fas fa-check-circle"></i> 🗑️ تم مسح الكاش بنجاح';
+                showError('تم مسح جميع البيانات');
+            };
+            
+            request.onerror = () => {
+                showError('فشل مسح الكاش');
+            };
+        }
+    }
+
+    // مسح كاش الموقع (localStorage + IndexedDB)
+    async function clearSiteCache() {
+        if (confirm('⚠️ هل تريد مسح كاش التطبيق بالكامل؟\nسيتم حذف جميع البيانات وسيتم تحديث الصفحة!')) {
+            // مسح IndexedDB
+            const tx = db.transaction(['scans'], 'readwrite');
+            const store = tx.objectStore('scans');
+            await store.clear();
+            
+            // مسح localStorage
+            localStorage.clear();
+            
+            // مسح Cache API إذا كان متاح
+            if ('caches' in window) {
+                const keys = await caches.keys();
+                await Promise.all(keys.map(key => caches.delete(key)));
+            }
+            
+            statusDiv.innerHTML = '<i class="fas fa-check-circle"></i> 🗑️ تم مسح الكاش، جاري التحديث...';
+            setTimeout(() => location.reload(), 1500);
+        }
+    }
 
     // عرض رسالة خطأ
     function showError(message) {
@@ -691,9 +977,7 @@
             const { data: { text } } = await Tesseract.recognize(
                 imageData,
                 'ara+eng',
-                {
-                    logger: m => console.log(m)
-                }
+                { logger: m => console.log(m) }
             );
             
             clearTimeout(timeout);
@@ -759,7 +1043,7 @@
         }
     }
 
-    // تهيئة Cropper
+    // تهيئة Cropper مع تحسين للرقم العلوي
     function initCropper(imageSrc) {
         try {
             imagePreview.src = imageSrc;
@@ -772,15 +1056,26 @@
             
             if (cropper) cropper.destroy();
             
-            // تأكد من تحميل الصورة قبل إنشاء cropper
             imagePreview.onload = () => {
                 cropper = new Cropper(imagePreview, {
                     viewMode: 1,
-                    autoCropArea: 0.9,
+                    autoCropArea: 0.7,
                     movable: true,
                     zoomable: true,
-                    rotatable: true
+                    rotatable: true,
+                    cropBoxMovable: true,
+                    cropBoxResizable: true
                 });
+                // تحريك منطقة القص للأعلى قليلاً للتركيز على الرقم
+                setTimeout(() => {
+                    if (cropper) {
+                        const containerData = cropper.getContainerData();
+                        const cropBoxData = cropper.getCropBoxData();
+                        cropper.setCropBoxData({
+                            top: containerData.height * 0.2
+                        });
+                    }
+                }, 100);
             };
             
             if (imagePreview.complete) {
@@ -815,7 +1110,7 @@
             cameraBtn.innerHTML = '<i class="fas fa-camera"></i> 📸 التقاط صورة';
             cameraBtn.onclick = capturePhoto;
             
-            statusDiv.innerHTML = '<i class="fas fa-camera"></i> الكاميرا جاهزة، حدد المنطقة المطلوبة';
+            statusDiv.innerHTML = '<i class="fas fa-camera"></i> الكاميرا جاهزة، ركز على رقم الهاتف';
             
         } catch (error) {
             console.error('Camera error:', error);
@@ -898,7 +1193,6 @@
         flashBtn.style.display = 'none';
         torchEnabled = false;
         
-        // إعادة تعيين المتغيرات
         phoneDisplay.innerText = '';
         customerNameInput.value = '';
         messageInput.value = '';
@@ -908,7 +1202,6 @@
     function updateOfflineStatus() {
         if (!navigator.onLine) {
             offlineIndicator.classList.add('show');
-            statusDiv.innerHTML = '<i class="fas fa-wifi"></i> وضع عدم الاتصال - بعض الميزات محدودة';
         } else {
             offlineIndicator.classList.remove('show');
         }
@@ -918,7 +1211,6 @@
     async function initTesseract() {
         showLoading(true, 'جاري تحميل محرك التعرف الضوئي...');
         try {
-            // اختبار ما إذا كان Tesseract متاح
             if (typeof Tesseract === 'undefined') {
                 throw new Error('Tesseract غير متاح');
             }
@@ -941,6 +1233,28 @@
             e.preventDefault();
         }
     }, true);
+    
+    // Escaping HTML
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    // تبديل التبويبات
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            const tabName = tab.dataset.tab;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            document.getElementById(`${tabName}Tab`).classList.add('active');
+            
+            if (tabName === 'history') {
+                loadHistory();
+            }
+        });
+    });
     
     // الأحداث
     document.getElementById('callBtn').onclick = () => {
@@ -971,12 +1285,7 @@
             return;
         }
         
-        const vcf = `BEGIN:VCARD
-VERSION:3.0
-FN:${name}
-TEL;TYPE=CELL:${phone}
-END:VCARD`;
-        
+        const vcf = `BEGIN:VCARD\nVERSION:3.0\nFN:${name}\nTEL;TYPE=CELL:${phone}\nEND:VCARD`;
         const blob = new Blob([vcf], { type: 'text/vcard' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -989,6 +1298,21 @@ END:VCARD`;
         
         statusDiv.innerHTML = '<i class="fas fa-check-circle"></i> ✅ تم حفظ جهة الاتصال';
     };
+    
+    document.getElementById('saveToHistoryBtn').onclick = async () => {
+        const name = customerNameInput.value;
+        const phone = phoneDisplay.innerText;
+        const message = messageInput.value;
+        
+        if (!phone) {
+            showError('لا يوجد رقم هاتف للحفظ');
+            return;
+        }
+        
+        await saveScan(name, phone, message);
+    };
+    
+    document.getElementById('clearHistoryBtn').onclick = clearAllCache;
     
     document.getElementById('newBtn').onclick = resetApp;
     document.getElementById('cancelBtn').onclick = resetApp;
@@ -1025,8 +1349,14 @@ END:VCARD`;
     window.addEventListener('offline', updateOfflineStatus);
     
     // بدء التطبيق
-    updateOfflineStatus();
-    initTesseract();
+    async function init() {
+        await openDatabase();
+        await loadHistory();
+        updateOfflineStatus();
+        initTesseract();
+    }
+    
+    init();
 </script>
 </body>
 </html>
