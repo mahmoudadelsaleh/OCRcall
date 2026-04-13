@@ -19,7 +19,6 @@
 
         #preview-box { flex: 0 0 38%; background: #000; position: relative; overflow: hidden; border-bottom: 2px solid var(--gold); }
         #preview-box.compact { flex: 0 0 15%; }
-
         #video, #image-to-crop { position: absolute; top: 0; right: 0; width: 100%; height: 100%; object-fit: contain; }
         #preview-box.compact #image-to-crop { object-fit: cover; }
 
@@ -31,23 +30,21 @@
         .btn-primary { background: var(--primary); color: white; }
         .btn-success { background: var(--success); color: white; }
         .btn-danger { background: var(--danger); color: white; }
-        .btn-warning { background: var(--warning); color: white; }
+
+        .name-container { position: relative; width: 90%; margin: 5px auto; }
+        .edit-field { width: 100%; padding: 12px; padding-left: 45px; border: 1px solid #ccc; border-radius: 12px; font-size: 16px; box-sizing: border-box; text-align: center; background: #fffbe6; }
+        .clear-name { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); background: var(--danger); color: white; border: none; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; }
 
         .phone-val { font-size: 32px; font-weight: bold; color: #d32f2f; text-align: center; margin: 10px auto; border: 2px dashed var(--primary); padding: 5px; border-radius: 12px; min-width: 200px; background: white; }
+        
         .mini-keyboard { display: none; grid-template-columns: repeat(3, 1fr); gap: 5px; background: #eee; padding: 10px; border-radius: 12px; margin: 5px auto; width: 220px; }
         .key { background: white; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 18px; text-align: center; cursor: pointer; box-shadow: 0 2px 0 #bbb; }
-        
-        /* تصميم عمودي للأزرار بناءً على طلبك */
-        .action-column { display: flex; flex-direction: column; gap: 10px; width: 95%; margin: auto; }
-        .grid-half { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
 
-        /* الحاوية السفلية الذهبية */
-        .footer-brand { 
-            width: 100%; background: #000; color: var(--gold); text-align: center; 
-            padding: 12px 0; font-size: 14px; font-weight: bold; 
-            position: absolute; bottom: 0; left: 0; z-index: 100; 
-            border-top: 2px solid var(--gold); 
-        }
+        /* الأزرار الأربعة: صفين وعمودين */
+        .action-grid-custom { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 95%; margin: auto; }
+        .side-right, .side-left { display: flex; flex-direction: column; gap: 10px; }
+
+        .footer-brand { width: 100%; background: #000; color: var(--gold); text-align: center; padding: 12px 0; font-size: 14px; font-weight: bold; position: absolute; bottom: 0; left: 0; z-index: 100; border-top: 2px solid var(--gold); }
     </style>
 </head>
 <body>
@@ -67,48 +64,51 @@
             <button class="btn btn-primary" id="btn-camera"><i class="fas fa-camera"></i> فتح الكاميرا</button>
             <label class="btn btn-primary" style="background:#6c757d; display: flex;" for="file-in"><i class="fas fa-image"></i> رفع صورة</label>
             <input type="file" id="file-in" accept="image/*" style="display:none;">
-            <button class="btn btn-danger" onclick="location.reload()"><i class="fas fa-sync-alt"></i> إعادة تحميل التطبيق</button>
+            <button class="btn btn-danger" onclick="location.reload()"><i class="fas fa-sync-alt"></i> إعادة تحميل</button>
         </div>
 
         <div id="crop-btns" style="display:none; width: 100%; text-align:center;">
             <input type="range" id="rot-slider" min="-180" max="180" step="1" value="0" style="width:90%; margin: 15px 0;">
-            <button class="btn btn-success" id="btn-ocr"><i class="fas fa-search"></i> قراءة (مهلة ٦ ثوانٍ)</button>
+            <button class="btn btn-success" id="btn-ocr"><i class="fas fa-search"></i> قراءة البيانات (٦ ثوانٍ)</button>
             <button class="btn btn-danger" onclick="location.reload()">🔄 إلغاء</button>
         </div>
 
         <div id="result-ui" style="display:none; width:100%;">
-            <input type="text" id="name-input" class="edit-field" placeholder="اسم العميل (اختياري)" style="width:90%; padding:12px; border-radius:12px; margin:5px auto; display:block; border:1px solid #ccc;">
+            <button id="retry-btn" class="btn btn-primary" style="display:none; background:#0056b3; margin-bottom:10px;"><i class="fas fa-redo-alt"></i> محاولة القراءة مرة أخرى</button>
+
+            <div class="name-container">
+                <input type="text" id="name-input" class="edit-field" placeholder="اسم العميل">
+                <button class="clear-name" onclick="document.getElementById('name-input').value=''"><i class="fas fa-times"></i></button>
+            </div>
+
             <div class="phone-val" id="phone-display"></div>
             
             <div id="mini-kb" class="mini-keyboard">
-                <div class="key" onclick="press('7')">7</div><div class="key" onclick="press('8')">8</div><div class="key" onclick="press('9')">9</div>
-                <div class="key" onclick="press('4')">4</div><div class="key" onclick="press('5')">5</div><div class="key" onclick="press('6')">6</div>
-                <div class="key" onclick="press('1')">1</div><div class="key" onclick="press('2')">2</div><div class="key" onclick="press('3')">3</div>
+                <div class="key" onclick="press('9')">9</div><div class="key" onclick="press('8')">8</div><div class="key" onclick="press('7')">7</div>
+                <div class="key" onclick="press('6')">6</div><div class="key" onclick="press('5')">5</div><div class="key" onclick="press('4')">4</div>
+                <div class="key" onclick="press('3')">3</div><div class="key" onclick="press('2')">2</div><div class="key" onclick="press('1')">1</div>
                 <div class="key" style="background:#ff4d4d; color:white" onclick="press('X')"><i class="fas fa-backspace"></i></div><div class="key" onclick="press('0')">0</div><div class="key" style="background:#888; color:white" onclick="press('C')">C</div>
             </div>
 
-            <div class="action-column">
-                <button class="btn btn-success" id="btn-wa"><i class="fab fa-whatsapp"></i> مراسلة واتساب</button>
-                <button class="btn btn-primary" id="btn-call"><i class="fas fa-phone"></i> اتصال هاتفي</button>
-                
-                <div class="grid-half">
-                    <button class="btn btn-warning" id="btn-vcf" style="color:white;"><i class="fas fa-user-plus"></i> حفظ</button>
+            <div class="action-grid-custom">
+                <div class="side-right"> <button class="btn btn-primary" id="btn-call"><i class="fas fa-phone"></i> اتصال</button>
+                    <button class="btn btn-success" id="btn-wa"><i class="fab fa-whatsapp"></i> واتساب</button>
+                </div>
+                <div class="side-left"> <button class="btn btn-warning" id="btn-vcf" style="background:var(--warning); color:white;"><i class="fas fa-user-plus"></i> حفظ</button>
                     <button class="btn btn-danger" onclick="location.reload()"><i class="fas fa-redo"></i> جديد</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="footer-brand">
-        Almas Solutions®²٠٢٦
-    </div>
+    <div class="footer-brand">Almas Solutions®²٠٢٦</div>
 </div>
 
 <script>
-    let cropper, currentRot = 0, track = null, flashOn = false;
+    let cropper, currentRot = 0, track = null, flashOn = false, lastCroppedImage = null;
     const img = document.getElementById('image-to-crop'), vid = document.getElementById('video');
-    const phoneDisp = document.getElementById('phone-display'), statusTxt = document.getElementById('status');
-    const previewBox = document.getElementById('preview-box'), focusFrame = document.getElementById('focus-frame'), flashBtn = document.getElementById('flash-btn');
+    const phoneDisp = document.getElementById('phone-display'), nameInput = document.getElementById('name-input'), statusTxt = document.getElementById('status');
+    const previewBox = document.getElementById('preview-box'), focusFrame = document.getElementById('focus-frame'), flashBtn = document.getElementById('flash-btn'), retryBtn = document.getElementById('retry-btn');
 
     function arToEn(str) { return str.replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d)); }
 
@@ -150,33 +150,53 @@
         let a = parseInt(this.value); cropper.rotate(a - currentRot); currentRot = a;
     };
 
-    document.getElementById('btn-ocr').onclick = () => {
-        const canvas = cropper.getCroppedCanvas();
+    document.getElementById('btn-ocr').onclick = startOCR;
+    retryBtn.onclick = startOCR;
+
+    function startOCR() {
+        const canvas = cropper ? cropper.getCroppedCanvas() : null;
+        const imageData = canvas ? canvas.toDataURL() : lastCroppedImage;
+        
+        if (cropper) {
+            lastCroppedImage = imageData;
+            previewBox.classList.add('compact'); 
+            cropper.destroy(); cropper = null;
+            img.src = imageData;
+        }
+
         statusTxt.innerText = "جاري القراءة (٦ ثوانٍ)... ⏳";
-        previewBox.classList.add('compact'); 
-        cropper.destroy(); 
-        img.src = canvas.toDataURL(); 
+        retryBtn.style.display = "none";
 
         let isDone = false;
-        setTimeout(() => {
+        const timer = setTimeout(() => {
             if (!isDone) {
-                statusTxt.innerText = "اكتب الرقم يدوياً ⚠️";
+                statusTxt.innerText = "تعذر التعرف - عدل الصورة أو اكتب يدوياً ⚠️";
                 document.getElementById('result-ui').style.display = "block";
                 document.getElementById('crop-btns').style.display = "none";
                 document.getElementById('mini-kb').style.display = "grid";
+                retryBtn.style.display = "block"; // إظهار زر المحاولة مرة أخرى
             }
         }, 6000);
 
-        Tesseract.recognize(canvas.toDataURL(), 'eng+ara').then(({ data: { text } }) => {
-            isDone = true;
+        Tesseract.recognize(imageData, 'eng+ara').then(({ data: { text } }) => {
+            isDone = true; clearTimeout(timer);
             let clean = arToEn(text.replace(/[\s-]/g, ''));
             const p = clean.match(/01[0125][0-9]{8}/);
             phoneDisp.innerText = p ? p[0] : "";
+            
+            let lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 2);
+            let extractedName = "";
+            for (let line of lines) {
+                if (!line.match(/[0-9]/) && line.length > 3) { extractedName = line; break; }
+            }
+            nameInput.value = extractedName;
+
             document.getElementById('result-ui').style.display = "block";
             document.getElementById('crop-btns').style.display = "none";
             statusTxt.innerText = p ? "تم ✅" : "لم يتم التعرف - اكتبه يدوياً";
+            if (!p) retryBtn.style.display = "block";
         });
-    };
+    }
 
     function press(v) {
         if (v === 'C') phoneDisp.innerText = '';
@@ -187,8 +207,8 @@
     document.getElementById('btn-wa').onclick = () => window.open(`https://wa.me/2${phoneDisp.innerText}`);
     document.getElementById('btn-call').onclick = () => window.location.href = `tel:${phoneDisp.innerText}`;
     document.getElementById('btn-vcf').onclick = () => {
-        const vcf = `BEGIN:VCARD\nVERSION:3.0\nFN:${document.getElementById('name-input').value || 'Customer'}\nTEL;TYPE=CELL:${phoneDisp.innerText}\nEND:VCARD`;
-        const a = document.createElement('a'); a.download = `customer.vcf`;
+        const vcf = `BEGIN:VCARD\nVERSION:3.0\nFN:${nameInput.value || 'عميل'}\nTEL;TYPE=CELL:${phoneDisp.innerText}\nEND:VCARD`;
+        const a = document.createElement('a'); a.download = `${nameInput.value || 'عميل'}.vcf`;
         a.href = URL.createObjectURL(new Blob([vcf], {type: "text/vcard"})); a.click();
     };
 </script>
