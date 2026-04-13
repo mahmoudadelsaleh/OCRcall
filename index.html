@@ -20,7 +20,6 @@
 
         .main-wrapper { display: flex; flex-direction: column; height: 100vh; width: 100%; max-width: 500px; margin: auto; background: white; }
 
-        /* حاوية الصورة - تم تقليل الارتفاع لتصبح 38% من الشاشة */
         .preview-container { 
             flex: 0 0 38%; background: #000; position: relative; 
             display: block; overflow: hidden; padding: 0; margin: 0;
@@ -61,12 +60,20 @@
         .chip { background: #e9ecef; padding: 4px 10px; border-radius: 15px; font-size: 11px; cursor: pointer; border: 1px solid #ccc; }
 
         #status { font-size: 12px; color: #555; font-weight: bold; margin-bottom: 2px; }
+        
+        /* زر الفلاش */
+        #flash-toggle {
+            position: absolute; top: 10px; left: 10px; z-index: 10;
+            background: rgba(0,0,0,0.5); border-radius: 50%; width: 40px; height: 40px;
+            display: none; align-items: center; justify-content: center; color: white; border: 2px solid white;
+        }
     </style>
 </head>
 <body>
 
 <div class="main-wrapper">
     <div class="preview-container">
+        <div id="flash-toggle">⚡</div>
         <video id="video" autoplay playsinline></video>
         <img id="image-to-crop">
     </div>
@@ -115,28 +122,44 @@
 </div>
 
 <script>
-    let cropper, currentRot = 0;
+    let cropper, currentRot = 0, track = null, flashOn = false;
     const img = document.getElementById('image-to-crop'), vid = document.getElementById('video');
     const phoneDisp = document.getElementById('phone-display'), nameInput = document.getElementById('name-input');
     const msgText = document.getElementById('msg-text'), chipsDiv = document.getElementById('chips');
+    const flashBtn = document.getElementById('flash-toggle');
     let savedMsgs = JSON.parse(localStorage.getItem('user_msgs')) || ["تم استلام الطلب.", "الطلب جاهز."];
 
-    // Service Worker Registration for PWA
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js').catch(err => console.log('SW error', err));
+    // دالة تحويل الأرقام العربية إلى إنجليزية
+    function arToEn(str) {
+        return str.replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d));
     }
 
     document.getElementById('btn-camera').onclick = async () => {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-        vid.srcObject = stream; vid.style.display = "block";
-        document.getElementById('btn-camera').innerText = "📸 التقاط";
-        document.getElementById('btn-camera').onclick = () => {
-            const c = document.createElement('canvas');
-            c.width = vid.videoWidth; c.height = vid.videoHeight;
-            c.getContext('2d').drawImage(vid, 0, 0);
-            initCrop(c.toDataURL('image/png'));
-            stream.getTracks().forEach(t => t.stop()); vid.style.display = "none";
-        };
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+            vid.srcObject = stream; vid.style.display = "block";
+            track = stream.getVideoTracks()[0];
+            
+            // إظهار زر الفلاش إذا كان مدعوماً
+            const caps = track.getCapabilities();
+            if (caps.torch) { flashBtn.style.display = "flex"; }
+
+            document.getElementById('btn-camera').innerText = "📸 التقاط";
+            document.getElementById('btn-camera').onclick = () => {
+                const c = document.createElement('canvas');
+                c.width = vid.videoWidth; c.height = vid.videoHeight;
+                c.getContext('2d').drawImage(vid, 0, 0);
+                initCrop(c.toDataURL('image/png'));
+                stream.getTracks().forEach(t => t.stop()); vid.style.display = "none";
+                flashBtn.style.display = "none";
+            };
+        } catch(e) { alert("تأكد من إعطاء صلاحية الكاميرا"); }
+    };
+
+    flashBtn.onclick = () => {
+        flashOn = !flashOn;
+        track.applyConstraints({ advanced: [{ torch: flashOn }] });
+        flashBtn.style.background = flashOn ? "var(--warning)" : "rgba(0,0,0,0.5)";
     };
 
     document.getElementById('file-in').onchange = (e) => {
@@ -161,7 +184,10 @@
         const canvas = cropper.getCroppedCanvas({ imageSmoothingHigh: true });
         document.getElementById('status').innerText = "قراءة... ⏳";
         Tesseract.recognize(canvas.toDataURL(), 'eng+ara').then(({ data: { text } }) => {
-            const p = text.replace(/[\s-]/g, '').match(/01[0125][0-9]{8}/);
+            // تحويل كل النص المقروء لأرقام إنجليزية قبل البحث عن النمط
+            let cleanText = arToEn(text.replace(/[\s-]/g, ''));
+            const p = cleanText.match(/01[0125][0-9]{8}/);
+            
             const lines = text.split('\n').filter(l => l.trim().length > 2);
             nameInput.value = lines[0] ? lines[0].replace(/العميل|Name|:|Customer/gi, '').trim() : "عميل";
             phoneDisp.innerText = p ? p[0] : "";
@@ -207,13 +233,13 @@
 
     renderChips();
 
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js')
-      .then(reg => console.log('Service Worker Registered'))
-      .catch(err => console.log('Service Worker Failed', err));
-  });
-}
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+          .then(reg => console.log('SW Registered'))
+          .catch(err => console.log('SW Failed', err));
+      });
+    }
 </script>
 </body>
 </html>
