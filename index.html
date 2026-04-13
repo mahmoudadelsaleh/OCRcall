@@ -16,10 +16,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- استخدام الملفات المحلية لـ Tesseract -->
-    <script src="tesseract.min.js"></script>
-    <script src="cropper.min.js"></script>
-    
     <style>
         * {
             margin: 0;
@@ -427,6 +423,7 @@
             padding: 30px;
             border-radius: 20px;
             text-align: center;
+            max-width: 80%;
         }
 
         .spinner {
@@ -443,23 +440,15 @@
             to { transform: rotate(360deg); }
         }
 
-        /* تنسيقات إضافية */
-        .hidden {
-            display: none !important;
-        }
-
-        /* تحسين التمرير */
-        .controls::-webkit-scrollbar {
-            width: 4px;
-        }
-
-        .controls::-webkit-scrollbar-track {
-            background: var(--light-gray);
-        }
-
-        .controls::-webkit-scrollbar-thumb {
-            background: var(--gray);
-            border-radius: 4px;
+        /* رسالة الخطأ */
+        .error-message {
+            background: var(--danger);
+            color: white;
+            padding: 12px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 16px;
+            display: none;
         }
     </style>
 </head>
@@ -488,6 +477,7 @@
         <div class="status" id="status">
             <i class="fas fa-check-circle"></i> جاهز للاستخدام
         </div>
+        <div class="error-message" id="errorMessage"></div>
 
         <!-- شاشة البداية -->
         <div id="startScreen">
@@ -588,9 +578,13 @@
 <div class="loading-overlay" id="loadingOverlay">
     <div class="loading-content">
         <div class="spinner"></div>
-        <p>جاري التحميل...</p>
+        <p id="loadingText">جاري التحميل...</p>
     </div>
 </div>
+
+<!-- استخدام CDN للمكتبات -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
 <script>
     // المتغيرات العامة
@@ -599,6 +593,7 @@
     let mediaStream = null;
     let torchEnabled = false;
     let lastImageData = null;
+    let tesseractReady = false;
     
     // العناصر DOM
     const video = document.getElementById('video');
@@ -607,6 +602,7 @@
     const focusFrame = document.getElementById('focusFrame');
     const flashBtn = document.getElementById('flashBtn');
     const statusDiv = document.getElementById('status');
+    const errorMessageDiv = document.getElementById('errorMessage');
     const startScreen = document.getElementById('startScreen');
     const cropScreen = document.getElementById('cropScreen');
     const resultScreen = document.getElementById('resultScreen');
@@ -617,6 +613,16 @@
     const rotateSlider = document.getElementById('rotateSlider');
     const loadingOverlay = document.getElementById('loadingOverlay');
     const offlineIndicator = document.getElementById('offlineIndicator');
+    const loadingText = document.getElementById('loadingText');
+
+    // عرض رسالة خطأ
+    function showError(message) {
+        errorMessageDiv.style.display = 'block';
+        errorMessageDiv.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${message}`;
+        setTimeout(() => {
+            errorMessageDiv.style.display = 'none';
+        }, 3000);
+    }
 
     // تحويل الأرقام العربية إلى إنجليزية
     function arabicToEnglish(str) {
@@ -645,12 +651,22 @@
     }
 
     // عرض/إخفاء التحميل
-    function showLoading(show) {
-        loadingOverlay.style.display = show ? 'flex' : 'none';
+    function showLoading(show, text = 'جاري التحميل...') {
+        if (show) {
+            loadingText.textContent = text;
+            loadingOverlay.style.display = 'flex';
+        } else {
+            loadingOverlay.style.display = 'none';
+        }
     }
 
     // بدء OCR
     async function performOCR(imageData) {
+        if (!tesseractReady) {
+            showError('محرك OCR لا يزال قيد التحميل، انتظر قليلاً');
+            return;
+        }
+        
         statusDiv.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> جاري قراءة البيانات...';
         retryOcrBtn.style.display = 'none';
         
@@ -660,14 +676,18 @@
                 document.getElementById('keyboard').style.display = 'grid';
                 retryOcrBtn.style.display = 'block';
             }
-        }, 6000);
+        }, 8000);
 
         try {
-            showLoading(true);
-            const worker = await Tesseract.createWorker('ara+eng');
-            const ret = await worker.recognize(imageData);
-            const text = ret.data.text;
-            await worker.terminate();
+            showLoading(true, 'جاري معالجة الصورة...');
+            
+            const { data: { text } } = await Tesseract.recognize(
+                imageData,
+                'ara+eng',
+                {
+                    logger: m => console.log(m)
+                }
+            );
             
             clearTimeout(timeout);
             showLoading(false);
@@ -678,6 +698,7 @@
             if (phone) {
                 phoneDisplay.innerText = phone;
                 statusDiv.innerHTML = '<i class="fas fa-check-circle"></i> ✅ تم العثور على الرقم';
+                document.getElementById('keyboard').style.display = 'none';
             } else {
                 phoneDisplay.innerText = '';
                 statusDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i> ⚠️ لم يتم العثور على رقم، أدخل يدوياً';
@@ -694,52 +715,74 @@
             statusDiv.innerHTML = '<i class="fas fa-times-circle"></i> ❌ فشل القراءة، أدخل البيانات يدوياً';
             document.getElementById('keyboard').style.display = 'grid';
             retryOcrBtn.style.display = 'block';
+            showError('حدث خطأ أثناء قراءة الصورة');
         }
     }
 
     // قص الصورة وبدء OCR
     function cropAndOCR() {
-        if (!cropper) return;
-        
-        const canvas = cropper.getCroppedCanvas();
-        const imageData = canvas.toDataURL('image/png');
-        lastImageData = imageData;
-        
-        cameraPreview.classList.remove('full');
-        cameraPreview.classList.add('compact');
-        imagePreview.src = imageData;
-        imagePreview.style.display = 'block';
-        video.style.display = 'none';
-        
-        if (cropper) {
-            cropper.destroy();
-            cropper = null;
+        if (!cropper) {
+            showError('لم يتم تحميل الصورة بشكل صحيح');
+            return;
         }
         
-        cropScreen.style.display = 'none';
-        resultScreen.style.display = 'block';
-        
-        performOCR(imageData);
+        try {
+            const canvas = cropper.getCroppedCanvas();
+            const imageData = canvas.toDataURL('image/png');
+            lastImageData = imageData;
+            
+            cameraPreview.classList.remove('full');
+            cameraPreview.classList.add('compact');
+            imagePreview.src = imageData;
+            imagePreview.style.display = 'block';
+            video.style.display = 'none';
+            
+            if (cropper) {
+                cropper.destroy();
+                cropper = null;
+            }
+            
+            cropScreen.style.display = 'none';
+            resultScreen.style.display = 'block';
+            
+            performOCR(imageData);
+        } catch (error) {
+            console.error('Crop error:', error);
+            showError('حدث خطأ أثناء قص الصورة');
+        }
     }
 
     // تهيئة Cropper
     function initCropper(imageSrc) {
-        imagePreview.src = imageSrc;
-        imagePreview.style.display = 'block';
-        video.style.display = 'none';
-        focusFrame.style.display = 'none';
-        
-        startScreen.style.display = 'none';
-        cropScreen.style.display = 'block';
-        
-        if (cropper) cropper.destroy();
-        cropper = new Cropper(imagePreview, {
-            viewMode: 1,
-            autoCropArea: 0.9,
-            movable: true,
-            zoomable: true,
-            rotatable: true
-        });
+        try {
+            imagePreview.src = imageSrc;
+            imagePreview.style.display = 'block';
+            video.style.display = 'none';
+            focusFrame.style.display = 'none';
+            
+            startScreen.style.display = 'none';
+            cropScreen.style.display = 'block';
+            
+            if (cropper) cropper.destroy();
+            
+            // تأكد من تحميل الصورة قبل إنشاء cropper
+            imagePreview.onload = () => {
+                cropper = new Cropper(imagePreview, {
+                    viewMode: 1,
+                    autoCropArea: 0.9,
+                    movable: true,
+                    zoomable: true,
+                    rotatable: true
+                });
+            };
+            
+            if (imagePreview.complete) {
+                imagePreview.onload();
+            }
+        } catch (error) {
+            console.error('Cropper init error:', error);
+            showError('حدث خطأ في تهيئة أداة القص');
+        }
     }
 
     // فتح الكاميرا
@@ -770,12 +813,16 @@
         } catch (error) {
             console.error('Camera error:', error);
             statusDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i> ❌ لا يمكن الوصول للكاميرا';
+            showError('تأكد من منح صلاحية الوصول للكاميرا');
         }
     }
 
     // التقاط صورة
     function capturePhoto() {
-        if (!video.videoWidth) return;
+        if (!video.videoWidth) {
+            showError('الكاميرا غير جاهزة بعد');
+            return;
+        }
         
         const canvas = document.createElement('canvas');
         canvas.width = video.videoWidth;
@@ -843,6 +890,11 @@
         
         flashBtn.style.display = 'none';
         torchEnabled = false;
+        
+        // إعادة تعيين المتغيرات
+        phoneDisplay.innerText = '';
+        customerNameInput.value = '';
+        messageInput.value = '';
     }
     
     // التحقق من حالة الاتصال
@@ -852,6 +904,26 @@
             statusDiv.innerHTML = '<i class="fas fa-wifi"></i> وضع عدم الاتصال - بعض الميزات محدودة';
         } else {
             offlineIndicator.classList.remove('show');
+        }
+    }
+    
+    // تحميل Tesseract
+    async function initTesseract() {
+        showLoading(true, 'جاري تحميل محرك التعرف الضوئي...');
+        try {
+            // اختبار ما إذا كان Tesseract متاح
+            if (typeof Tesseract === 'undefined') {
+                throw new Error('Tesseract غير متاح');
+            }
+            tesseractReady = true;
+            showLoading(false);
+            statusDiv.innerHTML = '<i class="fas fa-check-circle"></i> ✅ جاهز - يمكنك البدء';
+        } catch (error) {
+            console.error('Tesseract init error:', error);
+            showLoading(false);
+            statusDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i> ⚠️ الوضع المبسط - الإدخال اليدوي فقط';
+            showError('سيتم العمل في وضع الإدخال اليدوي');
+            tesseractReady = false;
         }
     }
     
@@ -870,20 +942,20 @@
     // الأحداث
     document.getElementById('callBtn').onclick = () => {
         const phone = phoneDisplay.innerText;
-        if (phone) {
+        if (phone && phone.length >= 10) {
             window.location.href = `tel:${phone}`;
         } else {
-            statusDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i> ⚠️ لا يوجد رقم للاتصال';
+            showError('الرجاء إدخال رقم هاتف صحيح');
         }
     };
     
     document.getElementById('whatsappBtn').onclick = () => {
         const phone = phoneDisplay.innerText;
         const message = messageInput.value || 'مرحباً';
-        if (phone) {
+        if (phone && phone.length >= 10) {
             window.open(`https://wa.me/2${phone}?text=${encodeURIComponent(message)}`);
         } else {
-            statusDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i> ⚠️ لا يوجد رقم لإرسال الرسالة';
+            showError('الرجاء إدخال رقم هاتف صحيح');
         }
     };
     
@@ -891,8 +963,8 @@
         const name = customerNameInput.value || 'عميل';
         const phone = phoneDisplay.innerText;
         
-        if (!phone) {
-            statusDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i> ⚠️ لا يوجد رقم لحفظه';
+        if (!phone || phone.length < 10) {
+            showError('لا يوجد رقم هاتف صحيح للحفظ');
             return;
         }
         
@@ -952,6 +1024,7 @@ END:VCARD`;
     // بدء التطبيق
     registerSW();
     updateOfflineStatus();
+    initTesseract();
 </script>
 </body>
 </html>
