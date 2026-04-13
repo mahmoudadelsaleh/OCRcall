@@ -29,15 +29,15 @@
             width: 100%; height: 100%; object-fit: contain; margin: 0;
         }
 
-        /* برواز منطقة التركيز */
+        /* برواز منطقة التركيز المحدث (8 أسطر وعرض أقل) */
         .focus-frame {
             position: absolute; top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            width: 80%; height: 60px; /* ارتفاع 4 أسطر تقريباً */
+            width: 70%; height: 120px; /* ارتفاع 8 أسطر تقريباً */
             border: 2px solid var(--warning);
-            box-shadow: 0 0 0 1000px rgba(0,0,0,0.5); /* تعتيم ما حول البرواز */
+            box-shadow: 0 0 0 1000px rgba(0,0,0,0.5); 
             z-index: 5; pointer-events: none; display: none;
-            border-radius: 8px;
+            border-radius: 12px;
         }
         .focus-label {
             position: absolute; top: -25px; right: 0;
@@ -185,28 +185,20 @@
         document.getElementById('init-btns').style.display = "none";
         document.getElementById('crop-btns').style.display = "block";
         if (cropper) cropper.destroy();
-        // جعل الكروب الافتراضي يطابق منطقة التركيز
         cropper = new Cropper(img, { 
             viewMode: 1, 
-            autoCropArea: 0.3,
+            autoCropArea: 0.5,
             ready() {
-                // ضبط مكان الكروب في المنتصف تماماً
                 const containerData = cropper.getContainerData();
                 cropper.setCropBoxData({
-                    left: containerData.width * 0.1,
-                    top: (containerData.height / 2) - 30,
-                    width: containerData.width * 0.68,
-                    height: 100
+                    left: containerData.width * 0.15, // تقليل العرض قليلاً
+                    top: (containerData.height / 2) - 60, // مركز الـ 120px
+                    width: containerData.width * 0.7, 
+                    height: 120 // 8 أسطر
                 });
             }
         });
     }
-
-    document.getElementById('rot-slider').oninput = function() {
-        let a = parseInt(this.value);
-        cropper.rotate(a - currentRot);
-        currentRot = a;
-    };
 
     document.getElementById('btn-ocr').onclick = () => {
         const canvas = cropper.getCroppedCanvas({ imageSmoothingHigh: true });
@@ -226,17 +218,16 @@
         });
     };
 
+    // بقية الدوال كما هي (press, toggleKB, renderChips, etc.)
     function toggleKB() {
         const kb = document.getElementById('mini-kb');
         kb.style.display = (kb.style.display === 'grid') ? 'none' : 'grid';
     }
-
     window.press = (v) => {
         if (v === 'C') phoneDisp.innerText = '';
         else if (v === 'X') phoneDisp.innerText = phoneDisp.innerText.slice(0, -1);
         else if (phoneDisp.innerText.length < 11) phoneDisp.innerText += v;
     };
-
     function renderChips() {
         chipsDiv.innerHTML = '';
         savedMsgs.forEach(m => {
@@ -246,7 +237,6 @@
             chipsDiv.appendChild(c);
         });
     }
-
     document.getElementById('btn-wa').onclick = () => window.open(`https://wa.me/2${phoneDisp.innerText}?text=${encodeURIComponent(msgText.value)}`);
     document.getElementById('btn-call').onclick = () => window.location.href = `tel:${phoneDisp.innerText}`;
     document.getElementById('btn-vcf').onclick = () => {
@@ -256,14 +246,10 @@
         a.href = URL.createObjectURL(new Blob([vcf], {type: "text/vcard"}));
         a.click();
     };
-
     renderChips();
-
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js')
-          .then(reg => console.log('SW Registered'))
-          .catch(err => console.log('SW Failed', err));
+        navigator.serviceWorker.register('sw.js').catch(err => console.log('SW error', err));
       });
     }
 </script>
