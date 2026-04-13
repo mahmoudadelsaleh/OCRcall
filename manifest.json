@@ -1,11 +1,11 @@
 {
-  "name": "كاشف الفواتير الاحترافي",
-  "short_name": "OCR Pro",
-  "description": "تطبيق استخراج أرقام الهواتف من الفواتير والاتصال بها",
-  "start_url": "./index.html",
+  "name": "OCRcall - تحويل الصور إلى جهات اتصال",
+  "short_name": "OCRcall",
+  "description": "تطبيق لقراءة الأرقام من الصور وإجراء مكالمات وإرسال رسائل واتساب",
+  "start_url": "/",
   "display": "standalone",
+  "theme_color": "#000000",
   "background_color": "#ffffff",
-  "theme_color": "#007bff",
   "orientation": "portrait",
   "icons": [
     {
@@ -17,7 +17,18 @@
     {
       "src": "icon-512x512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
-  ]
+  ],
+  "shortcuts": [
+    {
+      "name": "مسح جديد",
+      "short_name": "مسح",
+      "description": "بدء مسح جديد",
+      "url": "/",
+      "icons": [{ "src": "icon-192x192.png", "sizes": "192x192" }]
+    }
+  ],
+  "categories": ["business", "productivity", "utilities"]
 }
