@@ -5,17 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>OCR Call - كاشف الفواتير</title>
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#007bff">
+    <meta name="theme-color" content="#000000">
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 
     <style>
-        :root { --primary: #007bff; --success: #28a745; --danger: #dc3545; --warning: #f39c12; --bg: #f4f7f6; }
+        :root { --primary: #007bff; --success: #28a745; --danger: #dc3545; --warning: #f39c12; --bg: #f4f7f6; --gold: #d4af37; }
         html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; background: var(--bg); font-family: sans-serif; }
-        .main-wrapper { display: flex; flex-direction: column; height: 100vh; max-width: 500px; margin: auto; background: white; }
         
-        .preview-container { flex: 0 0 38%; background: #000; position: relative; overflow: hidden; }
+        .main-wrapper { display: flex; flex-direction: column; height: 100vh; max-width: 500px; margin: auto; background: white; position: relative; }
+        
+        /* تقليل ارتفاع الحاوية قليلاً إلى 33% */
+        .preview-container { flex: 0 0 33%; background: #000; position: relative; overflow: hidden; }
         #video, #image-to-crop { position: absolute; top: 0; right: 0; width: 100%; height: 100%; object-fit: contain; }
         
         .focus-frame {
@@ -24,8 +26,12 @@
             box-shadow: 0 0 0 1000px rgba(0,0,0,0.5); z-index: 5; pointer-events: none; display: none; border-radius: 12px;
         }
 
-        .controls-section { flex: 1; padding: 8px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; }
-        .btn { width: 95%; padding: 12px; margin: 4px 0; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; font-size: 16px; }
+        .controls-section { flex: 1; padding: 8px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding-bottom: 50px; }
+        
+        /* ضبط الكاميرا ورفع الصورة بنفس الحجم */
+        .init-btn-row { width: 95%; display: flex; flex-direction: column; gap: 8px; align-items: center; }
+        .btn { width: 100%; padding: 12px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.3s; }
+        
         .btn-primary { background: var(--primary); color: white; }
         .btn-success { background: var(--success); color: white; }
         .btn-danger { background: var(--danger); color: white; }
@@ -45,6 +51,14 @@
         
         .chips-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; margin: 5px 0; width: 100%; }
         .chip { background: #e9ecef; padding: 5px 12px; border-radius: 15px; font-size: 12px; cursor: pointer; border: 1px solid #ccc; }
+
+        /* حاوية الحقوق الذهبية */
+        .footer-brand {
+            width: 100%; background: #000; color: var(--gold); text-align: center;
+            padding: 8px 0; font-size: 14px; font-weight: bold;
+            position: absolute; bottom: 0; left: 0; z-index: 20;
+            border-top: 1px solid var(--gold);
+        }
     </style>
 </head>
 <body>
@@ -58,17 +72,16 @@
     </div>
 
     <div class="controls-section">
-        <div id="status" style="font-size:12px; font-weight:bold;">جاهز</div>
+        <div id="status" style="font-size:11px; font-weight:bold; margin-bottom: 5px;">جاهز</div>
 
-        <div id="init-btns" style="width:100%">
+        <div id="init-btns" class="init-btn-row">
             <button class="btn btn-primary" id="btn-camera">📸 فتح الكاميرا</button>
-            <label class="btn btn-primary" style="background:#6c757d; display:block; text-align:center" for="file-in">📁 رفع صورة من الجهاز</label>
+            <label class="btn btn-primary" style="background:#6c757d; display:flex; align-items:center; justify-content:center;" for="file-in">📁 رفع صورة من الجهاز</label>
             <input type="file" id="file-in" accept="image/*" style="display:none;">
         </div>
 
         <div id="crop-btns" style="display:none; width:100%">
-            <div style="text-align: center; font-size: 13px;">اسحب السلايدر لعدل الصورة:</div>
-            <input type="range" id="rot-slider" min="-180" max="180" step="1" value="0" style="width:90%; margin: 10px 0;">
+            <input type="range" id="rot-slider" min="-180" max="180" step="1" value="0" style="width:95%; margin: 10px 0;">
             <button class="btn btn-success" id="btn-ocr">🔍 قراءة البيانات</button>
             <button class="btn btn-danger" onclick="location.reload()">🔄 إعادة</button>
         </div>
@@ -77,7 +90,7 @@
             <input type="text" id="name-input" class="edit-field" placeholder="اسم العميل">
             <div class="phone-val" id="phone-display"></div>
             
-            <button class="btn btn-warning" style="width:auto; padding:5px 15px; font-size:12px; margin-bottom:5px;" onclick="toggleKB()">✏️ تعديل الرقم</button>
+            <button class="btn btn-warning" style="width:auto; padding:5px 15px; font-size:12px; margin-bottom:10px;" onclick="toggleKB()">✏️ تعديل الرقم</button>
 
             <div id="mini-kb" class="mini-keyboard">
                 <div class="key" onclick="press('7')">7</div><div class="key" onclick="press('8')">8</div><div class="key" onclick="press('9')">9</div>
@@ -92,10 +105,14 @@
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; width: 95%; margin: auto;">
                 <button class="btn btn-success" id="btn-wa">💬 واتساب</button>
                 <button class="btn btn-primary" id="btn-call">📞 اتصال</button>
-                <button class="btn btn-warning" id="btn-vcf">👤 حفظ</button>
+                <button class="btn btn-warning" id="btn-vcf">👤 حفظ الرقم</button>
                 <button class="btn btn-danger" onclick="location.reload()">🔄 جديد</button>
             </div>
         </div>
+    </div>
+
+    <div class="footer-brand">
+        Almas Solutions®²⁰²٦
     </div>
 </div>
 
@@ -110,7 +127,6 @@
 
     function arToEn(str) { return str.replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d)); }
 
-    // تشغيل الكاميرا
     document.getElementById('btn-camera').onclick = async () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
@@ -120,7 +136,7 @@
             const caps = track.getCapabilities();
             if (caps.torch) flashBtn.style.display = "flex";
 
-            document.getElementById('btn-camera').innerText = "📸 التقاط";
+            document.getElementById('btn-camera').innerText = "📸 التقاط الصورة";
             document.getElementById('btn-camera').onclick = () => {
                 const c = document.createElement('canvas');
                 c.width = vid.videoWidth; c.height = vid.videoHeight;
@@ -181,13 +197,11 @@
             document.getElementById('result-ui').style.display = "block";
             document.getElementById('crop-btns').style.display = "none";
             document.getElementById('status').innerText = "تم ✅";
-            // إظهار الصورة المقتصة للمراجعة
             img.src = canvas.toDataURL();
             cropper.destroy();
         });
     };
 
-    // وظائف الكيبورد وتعديل الرقم
     function toggleKB() {
         const kb = document.getElementById('mini-kb');
         kb.style.display = (kb.style.display === 'grid') ? 'none' : 'grid';
@@ -198,7 +212,6 @@
         else if (phoneDisp.innerText.length < 11) phoneDisp.innerText += v;
     };
 
-    // رسائل الواتساب الافتراضية
     function renderChips() {
         chipsDiv.innerHTML = '';
         savedMsgs.forEach(m => {
