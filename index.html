@@ -3,228 +3,729 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>OCR Pro - Almas Solutions</title>
-
-    <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#000000">
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <title>OCRcall²⁰²⁶ - تحويل الصور إلى جهات اتصال</title>
+    
+    <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+    
     <style>
-        :root { --primary: #007bff; --success: #28a745; --danger: #dc3545; --warning: #f39c12; --bg: #f4f7f6; --gold: #d4af37; }
-        html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; background: var(--bg); font-family: sans-serif; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
 
-        .main-wrapper { display: flex; flex-direction: column; height: 100vh; max-width: 500px; margin: auto; background: white; position: relative; padding-bottom: 75px; box-sizing: border-box; }
+        :root {
+            --primary: #007AFF;
+            --success: #34C759;
+            --danger: #FF3B30;
+            --warning: #FF9500;
+            --dark: #1C1C1E;
+            --gray: #8E8E93;
+            --light-gray: #F2F2F7;
+            --gold: #D4AF37;
+        }
 
-        #preview-box { flex: 0 0 35%; background: #000; position: relative; overflow: hidden; border-bottom: 2px solid var(--gold); }
-        /* تم زيادة ارتفاع الحاوية المقتصة قليلاً بناءً على طلبك */
-        #preview-box.compact { flex: 0 0 22%; }
-        #video, #image-to-crop { position: absolute; top: 0; right: 0; width: 100%; height: 100%; object-fit: contain; }
-        #preview-box.compact #image-to-crop { object-fit: cover; }
+        body {
+            background: var(--light-gray);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            overflow: hidden;
+        }
 
-        .focus-frame { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80%; height: 100px; border: 2px solid var(--warning); box-shadow: 0 0 0 1000px rgba(0,0,0,0.5); z-index: 5; pointer-events: none; display: none; border-radius: 8px; }
-        #flash-btn { position: absolute; top: 15px; left: 15px; z-index: 10; background: rgba(0,0,0,0.6); color: white; border: 2px solid white; width: 45px; height: 45px; border-radius: 50%; display: none; align-items: center; justify-content: center; cursor: pointer; font-size: 20px; }
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            max-width: 500px;
+            margin: 0 auto;
+            background: white;
+            position: relative;
+        }
 
-        .controls-section { flex: 1; padding: 10px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; }
+        /* معاينة الكاميرا */
+        .camera-preview {
+            position: relative;
+            background: #000;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
 
-        .btn { width: 90%; height: 50px; margin: 6px 0; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 10px; }
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-success { background: var(--success); color: white; }
-        .btn-danger { background: var(--danger); color: white; }
-        .btn-gray { background: #6c757d; color: white; }
-        .btn-dark { background: #333; color: white; }
+        .camera-preview.full {
+            flex: 1;
+        }
 
-        .name-container { position: relative; width: 90%; margin: 5px auto; }
-        .edit-field { width: 100%; height: 45px; border: 1px solid #ccc; border-radius: 12px; font-size: 16px; text-align: center; background: #fffbe6; box-sizing: border-box; }
-        .clear-name { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); background: var(--danger); color: white; border: none; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; z-index: 2; }
+        .camera-preview.compact {
+            height: 150px;
+            flex-shrink: 0;
+        }
 
-        /* تم تحويل مربع عرض الرقم إلى Input يدعم لوحة المفاتيح */
-        .phone-input-field { font-size: 32px; font-weight: bold; color: #d32f2f; text-align: center; margin: 10px auto; border: 2px dashed var(--primary); padding: 5px; border-radius: 12px; width: 90%; background: white; outline: none; box-sizing: border-box; }
+        #video, #image-preview {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
 
-        .action-grid-custom { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 90%; margin: 10px auto; }
-        .side-group { display: flex; flex-direction: column; gap: 8px; }
-        .side-group .btn { width: 100%; margin: 0; font-size: 14px; }
+        .camera-preview.compact #image-preview {
+            object-fit: cover;
+        }
 
-        .chips-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; margin: 8px 0; width: 95%; }
-        .chip { background: #e9ecef; padding: 6px 12px; border-radius: 20px; font-size: 11px; cursor: pointer; border: 1px solid #ccc; font-weight: bold; }
-        .chip:active { background: var(--gold); }
+        .focus-frame {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 85%;
+            height: 120px;
+            border: 2px solid var(--warning);
+            border-radius: 12px;
+            box-shadow: 0 0 0 2000px rgba(0,0,0,0.6);
+            pointer-events: none;
+            z-index: 5;
+        }
 
-        .mini-keyboard { display: none; grid-template-columns: repeat(3, 1fr); gap: 5px; background: #eee; padding: 10px; border-radius: 12px; margin: 5px auto; width: 240px; }
-        .key { background: white; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 18px; text-align: center; cursor: pointer; box-shadow: 0 2px 0 #bbb; }
+        .flash-btn {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 44px;
+            height: 44px;
+            background: rgba(0,0,0,0.7);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            cursor: pointer;
+            z-index: 10;
+            backdrop-filter: blur(10px);
+            border: none;
+        }
 
-        .footer-brand { 
-            width: 100%; background: #000; color: var(--gold); text-align: center; 
-            padding: 15px 0; font-size: 15px; font-weight: bold; 
-            position: fixed; bottom: 0; left: 0; z-index: 9999; 
-            border-top: 2px solid var(--gold); box-shadow: 0 -2px 10px rgba(0,0,0,0.5);
+        /* منطقة التحكم */
+        .controls {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .btn {
+            width: 100%;
+            height: 50px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: var(--gray);
+            color: white;
+        }
+
+        .btn-warning {
+            background: var(--warning);
+            color: white;
+        }
+
+        /* واجهة النتائج */
+        .result-section {
+            display: none;
+        }
+
+        .name-field {
+            position: relative;
+            margin-bottom: 16px;
+        }
+
+        .name-field input {
+            width: 100%;
+            height: 50px;
+            border: 1px solid #E5E5EA;
+            border-radius: 12px;
+            font-size: 16px;
+            text-align: center;
+            background: #FFF9E6;
+            padding: 0 40px;
+        }
+
+        .clear-name {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: var(--danger);
+            color: white;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .phone-number {
+            font-size: 36px;
+            font-weight: bold;
+            color: var(--danger);
+            text-align: center;
+            padding: 16px;
+            background: #F2F2F7;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            font-family: monospace;
+            letter-spacing: 2px;
+        }
+
+        .keyboard {
+            display: none;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            background: #F2F2F7;
+            padding: 12px;
+            border-radius: 16px;
+            margin-bottom: 16px;
+        }
+
+        .key {
+            background: white;
+            padding: 16px;
+            text-align: center;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.1s;
+        }
+
+        .key:active {
+            transform: scale(0.95);
+            background: #E5E5EA;
+        }
+
+        .chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .chip {
+            background: #F2F2F7;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .chip:active {
+            background: #E5E5EA;
+        }
+
+        textarea {
+            width: 100%;
+            height: 80px;
+            border: 1px solid #E5E5EA;
+            border-radius: 12px;
+            padding: 12px;
+            font-size: 14px;
+            resize: none;
+            margin-bottom: 16px;
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .status {
+            text-align: center;
+            padding: 12px;
+            font-weight: 500;
+            color: var(--primary);
+        }
+
+        .footer {
+            background: #000;
+            color: var(--gold);
+            text-align: center;
+            padding: 12px;
+            font-size: 13px;
+            font-weight: bold;
+            border-top: 1px solid var(--gold);
         }
     </style>
 </head>
 <body>
 
-<div class="main-wrapper">
-    <div id="preview-box">
-        <div id="flash-btn" title="فلاش"><i class="fas fa-bolt"></i></div>
-        <div id="focus-frame" class="focus-frame"></div>
+<div class="app-container">
+    <div class="camera-preview full" id="cameraPreview">
+        <button class="flash-btn" id="flashBtn" style="display: none;">
+            <i class="fas fa-bolt"></i>
+        </button>
+        <div class="focus-frame" id="focusFrame"></div>
         <video id="video" autoplay playsinline></video>
-        <img id="image-to-crop" style="display:none;">
+        <img id="image-preview" style="display: none;">
     </div>
 
-    <div class="controls-section">
-        <div id="status" style="font-weight:bold; color:var(--primary); margin-bottom:5px;">جاهز</div>
+    <div class="controls">
+        <div class="status" id="status">📱 جاهز للاستخدام</div>
 
-        <div id="init-btns" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
-            <button class="btn btn-primary" id="btn-camera"><i class="fas fa-camera"></i> فتح الكاميرا</button>
-            <label class="btn btn-gray" for="file-in"><i class="fas fa-image"></i> رفع صورة</label>
-            <input type="file" id="file-in" accept="image/*" style="display:none;">
-            <button class="btn btn-dark" onclick="location.reload()"><i class="fas fa-sync-alt"></i> تحديث التطبيق</button>
+        <!-- شاشة البداية -->
+        <div id="startScreen">
+            <button class="btn btn-primary" id="cameraBtn">
+                <i class="fas fa-camera"></i> فتح الكاميرا
+            </button>
+            <label class="btn btn-secondary" for="imageUpload">
+                <i class="fas fa-image"></i> رفع صورة
+            </label>
+            <input type="file" id="imageUpload" accept="image/*" style="display: none;">
+            <button class="btn btn-secondary" onclick="location.reload()">
+                <i class="fas fa-sync-alt"></i> تحديث
+            </button>
         </div>
 
-        <div id="crop-btns" style="display:none; width: 100%; text-align:center;">
-            <input type="range" id="rot-slider" min="-180" max="180" step="1" value="0" style="width:90%; margin: 10px 0;">
-            <button class="btn btn-success" id="btn-ocr"><i class="fas fa-search"></i> قراءة البيانات (٦ ثوانٍ)</button>
-            <button class="btn btn-danger" style="width:90%; margin:auto;" onclick="location.reload()">🔄 إلغاء</button>
+        <!-- شاشة القص -->
+        <div id="cropScreen" style="display: none;">
+            <input type="range" id="rotateSlider" min="-180" max="180" step="1" value="0" style="width: 100%; margin-bottom: 12px;">
+            <button class="btn btn-success" id="ocrBtn">
+                <i class="fas fa-search"></i> قراءة البيانات
+            </button>
+            <button class="btn btn-danger" onclick="location.reload()">
+                <i class="fas fa-times"></i> إلغاء
+            </button>
         </div>
 
-        <div id="result-ui" style="display:none; width:100%;">
-            <div class="name-container">
-                <input type="text" id="name-input" class="edit-field" placeholder="اسم العميل">
-                <button class="clear-name" onclick="document.getElementById('name-input').value=''"><i class="fas fa-times"></i></button>
+        <!-- شاشة النتائج -->
+        <div id="resultScreen" style="display: none;">
+            <button class="btn btn-secondary" id="retryOcrBtn" style="display: none;">
+                <i class="fas fa-redo-alt"></i> محاولة مرة أخرى
+            </button>
+
+            <div class="name-field">
+                <input type="text" id="customerName" placeholder="اسم العميل">
+                <button class="clear-name" onclick="document.getElementById('customerName').value = ''">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
 
-            <input type="tel" id="phone-display" class="phone-input-field" placeholder="01xxxxxxxxx">
+            <div class="phone-number" id="phoneNumber"></div>
 
-            <div id="mini-kb" class="mini-keyboard">
-                <div class="key" onclick="press('9')">9</div><div class="key" onclick="press('8')">8</div><div class="key" onclick="press('7')">7</div>
-                <div class="key" onclick="press('6')">6</div><div class="key" onclick="press('5')">5</div><div class="key" onclick="press('4')">4</div>
-                <div class="key" onclick="press('3')">3</div><div class="key" onclick="press('2')">2</div><div class="key" onclick="press('1')">1</div>
-                <div class="key" style="background:#ff4d4d; color:white" onclick="press('X')"><i class="fas fa-backspace"></i></div><div class="key" onclick="press('0')">0</div><div class="key" style="background:#888; color:white" onclick="press('C')">C</div>
-            </div>
-
-            <div class="chips-container">
-                <div class="chip" onclick="setMsg('تم استلام طلبك.')">استلام</div>
-                <div class="chip" onclick="setMsg('الطلب جاهز للتسليم.')">جاهز</div>
-                <div class="chip" onclick="setMsg('الدليفري في الطريق.')">بالطريق</div>
-            </div>
-            <textarea id="msg-input" class="edit-field" style="height:45px; margin-bottom:10px; padding: 5px;" placeholder="رسالة الواتساب..."></textarea>
-
-            <div class="action-grid-custom">
-                <div class="side-group">
-                    <button class="btn btn-primary" id="btn-call"><i class="fas fa-phone"></i> اتصال</button>
-                    <button class="btn btn-success" id="btn-wa"><i class="fab fa-whatsapp"></i> واتساب</button>
+            <div class="keyboard" id="keyboard">
+                <div class="key" onclick="addDigit('9')">9</div>
+                <div class="key" onclick="addDigit('8')">8</div>
+                <div class="key" onclick="addDigit('7')">7</div>
+                <div class="key" onclick="addDigit('6')">6</div>
+                <div class="key" onclick="addDigit('5')">5</div>
+                <div class="key" onclick="addDigit('4')">4</div>
+                <div class="key" onclick="addDigit('3')">3</div>
+                <div class="key" onclick="addDigit('2')">2</div>
+                <div class="key" onclick="addDigit('1')">1</div>
+                <div class="key" style="background: #FF3B30; color: white;" onclick="deleteDigit()">
+                    <i class="fas fa-backspace"></i>
                 </div>
-                <div class="side-group">
-                    <button class="btn btn-warning" id="btn-vcf" style="color:white;"><i class="fas fa-user-plus"></i> حفظ</button>
-                    <button class="btn btn-danger" onclick="location.reload()"><i class="fas fa-redo"></i> جديد</button>
+                <div class="key" onclick="addDigit('0')">0</div>
+                <div class="key" style="background: #8E8E93; color: white;" onclick="clearPhone()">
+                    C
                 </div>
             </div>
+
+            <div class="chips">
+                <div class="chip" onclick="setQuickMessage('تم استلام طلبك بنجاح ✅')">استلام</div>
+                <div class="chip" onclick="setQuickMessage('طلبك جاهز للتسليم 📦')">جاهز</div>
+                <div class="chip" onclick="setQuickMessage('المندوب في الطريق 🚚')">بالطريق</div>
+                <div class="chip" onclick="setQuickMessage('تم التوصيل 🎉')">تم التوصيل</div>
+            </div>
+
+            <textarea id="messageInput" placeholder="أدخل رسالة الواتساب..."></textarea>
+
+            <div class="action-buttons">
+                <button class="btn btn-primary" id="callBtn">
+                    <i class="fas fa-phone"></i> اتصال
+                </button>
+                <button class="btn btn-success" id="whatsappBtn">
+                    <i class="fab fa-whatsapp"></i> واتساب
+                </button>
+                <button class="btn btn-warning" id="saveContactBtn">
+                    <i class="fas fa-user-plus"></i> حفظ جهة اتصال
+                </button>
+                <button class="btn btn-danger" onclick="resetApp()">
+                    <i class="fas fa-redo-alt"></i> جديد
+                </button>
+            </div>
         </div>
+    </div>
+
+    <div class="footer">
+        Almas Solutions®²⁰²⁶
     </div>
 </div>
 
-<div class="footer-brand">Almas Solutions®²⁰²٦</div>
-
 <script>
-    let cropper, currentRot = 0, track = null, flashOn = false, lastImg = null;
-    const img = document.getElementById('image-to-crop'), vid = document.getElementById('video');
-    const phoneInput = document.getElementById('phone-display'), nameInput = document.getElementById('name-input'), statusTxt = document.getElementById('status');
-    const msgInput = document.getElementById('msg-input');
+    // المتغيرات العامة
+    let cropper = null;
+    let currentRotation = 0;
+    let mediaStream = null;
+    let torchEnabled = false;
+    let lastImageData = null;
+    
+    // العناصر DOM
+    const video = document.getElementById('video');
+    const imagePreview = document.getElementById('image-preview');
+    const cameraPreview = document.getElementById('cameraPreview');
+    const focusFrame = document.getElementById('focusFrame');
+    const flashBtn = document.getElementById('flashBtn');
+    const statusDiv = document.getElementById('status');
+    const startScreen = document.getElementById('startScreen');
+    const cropScreen = document.getElementById('cropScreen');
+    const resultScreen = document.getElementById('resultScreen');
+    const phoneDisplay = document.getElementById('phoneNumber');
+    const customerNameInput = document.getElementById('customerName');
+    const messageInput = document.getElementById('messageInput');
+    const retryOcrBtn = document.getElementById('retryOcrBtn');
+    const rotateSlider = document.getElementById('rotateSlider');
 
-    function arToEn(str) { return str.replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d)); }
-    function setMsg(m) { msgInput.value = m; }
+    // تحويل الأرقام العربية إلى إنجليزية
+    function arabicToEnglish(str) {
+        const arabicNumbers = '٠١٢٣٤٥٦٧٨٩';
+        return str.replace(/[٠-٩]/g, d => arabicNumbers.indexOf(d));
+    }
 
-    document.getElementById('btn-camera').onclick = async () => {
+    // استخراج رقم الهاتف من النص
+    function extractPhoneNumber(text) {
+        const cleaned = arabicToEnglish(text.replace(/[\s\-\(\)]/g, ''));
+        const phoneRegex = /01[0125][0-9]{8}/;
+        const match = cleaned.match(phoneRegex);
+        return match ? match[0] : '';
+    }
+
+    // استخراج الاسم من النص
+    function extractName(text) {
+        const lines = text.split('\n');
+        for (let line of lines) {
+            line = line.trim();
+            if (line.length > 2 && line.length < 30 && !/[0-9]/.test(line) && line.length > 2) {
+                return line;
+            }
+        }
+        return '';
+    }
+
+    // بدء OCR
+    async function performOCR(imageData) {
+        statusDiv.innerHTML = '⏳ جاري قراءة البيانات...';
+        retryOcrBtn.style.display = 'none';
+        
+        let timeout = setTimeout(() => {
+            if (statusDiv.innerHTML !== '✅ تم القراءة') {
+                statusDiv.innerHTML = '⚠️ انتهى الوقت، يمكنك الإدخال يدوياً';
+                document.getElementById('keyboard').style.display = 'grid';
+                retryOcrBtn.style.display = 'block';
+            }
+        }, 6000);
+
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-            vid.srcObject = stream; vid.style.display = "block"; document.getElementById('focus-frame').style.display = "block";
-            track = stream.getVideoTracks()[0];
-            if (track.getCapabilities().torch) document.getElementById('flash-btn').style.display = "flex";
-            document.getElementById('btn-camera').innerHTML = '<i class="fas fa-circle"></i> التقاط';
-            document.getElementById('btn-camera').onclick = () => {
-                const c = document.createElement('canvas');
-                c.width = vid.videoWidth; c.height = vid.videoHeight;
-                c.getContext('2d').drawImage(vid, 0, 0);
-                initCrop(c.toDataURL('image/png'));
-                stream.getTracks().forEach(t => t.stop());
-                vid.style.display = "none"; document.getElementById('focus-frame').style.display = "none";
-                document.getElementById('flash-btn').style.display = "none";
-            };
-        } catch(e) { alert("تأكد من صلاحيات الكاميرا"); }
-    };
+            const result = await Tesseract.recognize(imageData, 'ara+eng', {
+                logger: m => console.log(m)
+            });
+            
+            clearTimeout(timeout);
+            const text = result.data.text;
+            const phone = extractPhoneNumber(text);
+            const name = extractName(text);
+            
+            if (phone) {
+                phoneDisplay.innerText = phone;
+                statusDiv.innerHTML = '✅ تم العثور على الرقم';
+            } else {
+                phoneDisplay.innerText = '';
+                statusDiv.innerHTML = '⚠️ لم يتم العثور على رقم، أدخل يدوياً';
+                document.getElementById('keyboard').style.display = 'grid';
+                retryOcrBtn.style.display = 'block';
+            }
+            
+            if (name) customerNameInput.value = name;
+            
+        } catch (error) {
+            clearTimeout(timeout);
+            console.error('OCR Error:', error);
+            statusDiv.innerHTML = '❌ فشل القراءة، أدخل البيانات يدوياً';
+            document.getElementById('keyboard').style.display = 'grid';
+            retryOcrBtn.style.display = 'block';
+        }
+    }
 
-    document.getElementById('flash-btn').onclick = async () => {
-        flashOn = !flashOn; await track.applyConstraints({ advanced: [{ torch: flashOn }] });
-    };
+    // قص الصورة وبدء OCR
+    function cropAndOCR() {
+        if (!cropper) return;
+        
+        const canvas = cropper.getCroppedCanvas();
+        const imageData = canvas.toDataURL('image/png');
+        lastImageData = imageData;
+        
+        // تصغير المعاينة
+        cameraPreview.classList.remove('full');
+        cameraPreview.classList.add('compact');
+        imagePreview.src = imageData;
+        imagePreview.style.display = 'block';
+        video.style.display = 'none';
+        
+        // تدمير cropper
+        cropper.destroy();
+        cropper = null;
+        
+        // إخفاء شاشة القص وعرض النتائج
+        cropScreen.style.display = 'none';
+        resultScreen.style.display = 'block';
+        
+        // بدء OCR
+        performOCR(imageData);
+    }
 
-    document.getElementById('file-in').onchange = (e) => {
-        const r = new FileReader(); r.onload = (ev) => initCrop(ev.target.result); r.readAsDataURL(e.target.files[0]);
-    };
-
-    function initCrop(src) {
-        img.src = src; img.style.display = "block";
-        document.getElementById('init-btns').style.display = "none";
-        document.getElementById('crop-btns').style.display = "block";
+    // تهيئة Cropper
+    function initCropper(imageSrc) {
+        imagePreview.src = imageSrc;
+        imagePreview.style.display = 'block';
+        video.style.display = 'none';
+        focusFrame.style.display = 'none';
+        
+        startScreen.style.display = 'none';
+        cropScreen.style.display = 'block';
+        
         if (cropper) cropper.destroy();
-        cropper = new Cropper(img, { viewMode: 1, autoCropArea: 0.9 });
-    }
-
-    document.getElementById('rot-slider').oninput = function() {
-        let a = parseInt(this.value); cropper.rotate(a - currentRot); currentRot = a;
-    };
-
-    document.getElementById('btn-ocr').onclick = () => {
-        const data = cropper.getCroppedCanvas().toDataURL();
-        lastImg = data; document.getElementById('preview-box').classList.add('compact'); 
-        cropper.destroy(); cropper = null; img.src = data; 
-
-        statusTxt.innerText = "جاري القراءة... ⏳";
-        let done = false;
-        setTimeout(() => { if (!done) { statusTxt.innerText = "اكتب يدوياً ⚠️"; document.getElementById('result-ui').style.display = "block"; document.getElementById('mini-kb').style.display = "grid"; } }, 6000);
-
-        Tesseract.recognize(data, 'eng+ara').then(({ data: { text } }) => {
-            done = true;
-            let clean = arToEn(text.replace(/[\s-]/g, ''));
-            const p = clean.match(/01[0125][0-9]{8}/);
-            phoneInput.value = p ? p[0] : "";
-            nameInput.value = (text.split('\n').find(l => l.trim().length > 3 && !l.match(/[0-9]/)) || "").trim();
-            document.getElementById('result-ui').style.display = "block";
-            document.getElementById('crop-btns').style.display = "none";
-            statusTxt.innerText = p ? "تم ✅" : "اكتب الرقم يدوياً";
+        cropper = new Cropper(imagePreview, {
+            viewMode: 1,
+            autoCropArea: 0.9,
+            movable: true,
+            zoomable: true,
+            rotatable: true
         });
-    };
-
-    function press(v) {
-        if (v === 'C') phoneInput.value = '';
-        else if (v === 'X') phoneInput.value = phoneInput.value.slice(0, -1);
-        else if (phoneInput.value.length < 11) phoneInput.value += v;
     }
 
-    document.getElementById('btn-wa').onclick = () => {
-        if(!phoneInput.value) { alert("اكتب الرقم أولاً"); return; }
-        window.open(`https://wa.me/2${phoneInput.value}?text=${encodeURIComponent(msgInput.value)}`);
-    };
-    document.getElementById('btn-call').onclick = () => {
-        if(!phoneInput.value) { alert("اكتب الرقم أولاً"); return; }
-        window.location.href = `tel:${phoneInput.value}`;
-    };
+    // فتح الكاميرا
+    async function startCamera() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'environment' }
+            });
+            
+            mediaStream = stream;
+            video.srcObject = stream;
+            video.style.display = 'block';
+            imagePreview.style.display = 'none';
+            focusFrame.style.display = 'block';
+            
+            // التحقق من دعم الفلاش
+            const track = stream.getVideoTracks()[0];
+            const capabilities = track.getCapabilities();
+            if (capabilities.torch) {
+                flashBtn.style.display = 'flex';
+            }
+            
+            // تغيير زر الكاميرا لالتقاط الصورة
+            const cameraBtn = document.getElementById('cameraBtn');
+            cameraBtn.innerHTML = '<i class="fas fa-camera"></i> التقاط صورة';
+            cameraBtn.onclick = capturePhoto;
+            
+        } catch (error) {
+            console.error('Camera error:', error);
+            statusDiv.innerHTML = '❌ لا يمكن الوصول للكاميرا';
+        }
+    }
 
-    document.getElementById('btn-vcf').onclick = () => {
-        const name = nameInput.value || 'عميل';
-        const phone = phoneInput.value;
-        if(!phone) { alert("لا يوجد رقم لحفظه"); return; }
-        const vcfData = `BEGIN:VCARD\nVERSION:3.0\nFN:${name}\nTEL;TYPE=CELL:${phone}\nEND:VCARD`;
-        const blob = new Blob([vcfData], { type: 'text/vcard' });
-        const url = window.URL.createObjectURL(blob);
+    // التقاط صورة
+    function capturePhoto() {
+        if (!video.videoWidth) return;
+        
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+        
+        // إيقاف الكاميرا
+        if (mediaStream) {
+            mediaStream.getTracks().forEach(track => track.stop());
+            mediaStream = null;
+        }
+        
+        initCropper(canvas.toDataURL('image/png'));
+    }
+
+    // تشغيل/إيقاف الفلاش
+    async function toggleFlash() {
+        if (!mediaStream) return;
+        
+        const track = mediaStream.getVideoTracks()[0];
+        torchEnabled = !torchEnabled;
+        await track.applyConstraints({
+            advanced: [{ torch: torchEnabled }]
+        });
+        
+        flashBtn.style.background = torchEnabled ? '#FF9500' : 'rgba(0,0,0,0.7)';
+    }
+
+    // دوال لوحة المفاتيح
+    window.addDigit = function(digit) {
+        let current = phoneDisplay.innerText;
+        if (current.length < 11) {
+            phoneDisplay.innerText = current + digit;
+        }
+    };
+    
+    window.deleteDigit = function() {
+        phoneDisplay.innerText = phoneDisplay.innerText.slice(0, -1);
+    };
+    
+    window.clearPhone = function() {
+        phoneDisplay.innerText = '';
+    };
+    
+    window.setQuickMessage = function(message) {
+        messageInput.value = message;
+    };
+    
+    // إعادة تعيين التطبيق
+    window.resetApp = function() {
+        if (mediaStream) {
+            mediaStream.getTracks().forEach(track => track.stop());
+        }
+        cameraPreview.classList.remove('compact');
+        cameraPreview.classList.add('full');
+        video.style.display = 'block';
+        imagePreview.style.display = 'none';
+        focusFrame.style.display = 'block';
+        startScreen.style.display = 'block';
+        cropScreen.style.display = 'none';
+        resultScreen.style.display = 'none';
+        statusDiv.innerHTML = '📱 جاهز للاستخدام';
+        
+        // إعادة تعيين زر الكاميرا
+        const cameraBtn = document.getElementById('cameraBtn');
+        cameraBtn.innerHTML = '<i class="fas fa-camera"></i> فتح الكاميرا';
+        cameraBtn.onclick = startCamera;
+    };
+    
+    // الاتصال
+    document.getElementById('callBtn').onclick = () => {
+        const phone = phoneDisplay.innerText;
+        if (phone) window.location.href = `tel:${phone}`;
+        else statusDiv.innerHTML = '⚠️ لا يوجد رقم للاتصال';
+    };
+    
+    // واتساب
+    document.getElementById('whatsappBtn').onclick = () => {
+        const phone = phoneDisplay.innerText;
+        const message = messageInput.value;
+        if (phone) {
+            window.open(`https://wa.me/2${phone}?text=${encodeURIComponent(message)}`);
+        } else {
+            statusDiv.innerHTML = '⚠️ لا يوجد رقم لإرسال الرسالة';
+        }
+    };
+    
+    // حفظ جهة اتصال
+    document.getElementById('saveContactBtn').onclick = () => {
+        const name = customerNameInput.value || 'عميل';
+        const phone = phoneDisplay.innerText;
+        
+        if (!phone) {
+            statusDiv.innerHTML = '⚠️ لا يوجد رقم لحفظه';
+            return;
+        }
+        
+        const vcf = `BEGIN:VCARD
+VERSION:3.0
+FN:${name}
+TEL;TYPE=CELL:${phone}
+END:VCARD`;
+        
+        const blob = new Blob([vcf], { type: 'text/vcard' });
+        const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
         a.download = `${name}.vcf`;
         document.body.appendChild(a);
         a.click();
-        window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        statusDiv.innerHTML = '✅ تم حفظ جهة الاتصال';
     };
+    
+    // إعادة محاولة OCR
+    retryOcrBtn.onclick = () => {
+        if (lastImageData) {
+            performOCR(lastImageData);
+        }
+    };
+    
+    // تدوير الصورة
+    rotateSlider.oninput = function() {
+        if (cropper) {
+            const rotation = parseInt(this.value);
+            cropper.rotate(rotation - currentRotation);
+            currentRotation = rotation;
+        }
+    };
+    
+    // زر OCR
+    document.getElementById('ocrBtn').onclick = cropAndOCR;
+    
+    // رفع صورة
+    document.getElementById('imageUpload').onchange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (ev) => initCropper(ev.target.result);
+            reader.readAsDataURL(file);
+        }
+    };
+    
+    // فلاش
+    flashBtn.onclick = toggleFlash;
+    
+    // بدء تشغيل الكاميرا عند الضغط على الزر
+    document.getElementById('cameraBtn').onclick = startCamera;
+    
+    // تسجيل Service Worker
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js').catch(err => console.log('SW Error:', err));
+    }
 </script>
 </body>
 </html>
