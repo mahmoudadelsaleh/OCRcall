@@ -29,6 +29,21 @@
             width: 100%; height: 100%; object-fit: contain; margin: 0;
         }
 
+        /* برواز منطقة التركيز */
+        .focus-frame {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%; height: 60px; /* ارتفاع 4 أسطر تقريباً */
+            border: 2px solid var(--warning);
+            box-shadow: 0 0 0 1000px rgba(0,0,0,0.5); /* تعتيم ما حول البرواز */
+            z-index: 5; pointer-events: none; display: none;
+            border-radius: 8px;
+        }
+        .focus-label {
+            position: absolute; top: -25px; right: 0;
+            color: var(--warning); font-size: 12px; font-weight: bold;
+        }
+
         .controls-section { flex: 1; padding: 8px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; }
 
         .btn { 
@@ -61,7 +76,6 @@
 
         #status { font-size: 12px; color: #555; font-weight: bold; margin-bottom: 2px; }
         
-        /* زر الفلاش */
         #flash-toggle {
             position: absolute; top: 10px; left: 10px; z-index: 10;
             background: rgba(0,0,0,0.5); border-radius: 50%; width: 40px; height: 40px;
@@ -74,6 +88,7 @@
 <div class="main-wrapper">
     <div class="preview-container">
         <div id="flash-toggle">⚡</div>
+        <div id="focus-frame" class="focus-frame"><span class="focus-label">ضع الاسم والرقم هنا</span></div>
         <video id="video" autoplay playsinline></video>
         <img id="image-to-crop">
     </div>
@@ -126,10 +141,9 @@
     const img = document.getElementById('image-to-crop'), vid = document.getElementById('video');
     const phoneDisp = document.getElementById('phone-display'), nameInput = document.getElementById('name-input');
     const msgText = document.getElementById('msg-text'), chipsDiv = document.getElementById('chips');
-    const flashBtn = document.getElementById('flash-toggle');
+    const flashBtn = document.getElementById('flash-toggle'), focusFrame = document.getElementById('focus-frame');
     let savedMsgs = JSON.parse(localStorage.getItem('user_msgs')) || ["تم استلام الطلب.", "الطلب جاهز."];
 
-    // دالة تحويل الأرقام العربية إلى إنجليزية
     function arToEn(str) {
         return str.replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d));
     }
@@ -138,9 +152,9 @@
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
             vid.srcObject = stream; vid.style.display = "block";
+            focusFrame.style.display = "block";
             track = stream.getVideoTracks()[0];
             
-            // إظهار زر الفلاش إذا كان مدعوماً
             const caps = track.getCapabilities();
             if (caps.torch) { flashBtn.style.display = "flex"; }
 
@@ -151,7 +165,7 @@
                 c.getContext('2d').drawImage(vid, 0, 0);
                 initCrop(c.toDataURL('image/png'));
                 stream.getTracks().forEach(t => t.stop()); vid.style.display = "none";
-                flashBtn.style.display = "none";
+                flashBtn.style.display = "none"; focusFrame.style.display = "none";
             };
         } catch(e) { alert("تأكد من إعطاء صلاحية الكاميرا"); }
     };
@@ -171,7 +185,21 @@
         document.getElementById('init-btns').style.display = "none";
         document.getElementById('crop-btns').style.display = "block";
         if (cropper) cropper.destroy();
-        cropper = new Cropper(img, { viewMode: 1, autoCropArea: 0.8 });
+        // جعل الكروب الافتراضي يطابق منطقة التركيز
+        cropper = new Cropper(img, { 
+            viewMode: 1, 
+            autoCropArea: 0.3,
+            ready() {
+                // ضبط مكان الكروب في المنتصف تماماً
+                const containerData = cropper.getContainerData();
+                cropper.setCropBoxData({
+                    left: containerData.width * 0.1,
+                    top: (containerData.height / 2) - 30,
+                    width: containerData.width * 0.8,
+                    height: 60
+                });
+            }
+        });
     }
 
     document.getElementById('rot-slider').oninput = function() {
@@ -184,10 +212,8 @@
         const canvas = cropper.getCroppedCanvas({ imageSmoothingHigh: true });
         document.getElementById('status').innerText = "قراءة... ⏳";
         Tesseract.recognize(canvas.toDataURL(), 'eng+ara').then(({ data: { text } }) => {
-            // تحويل كل النص المقروء لأرقام إنجليزية قبل البحث عن النمط
             let cleanText = arToEn(text.replace(/[\s-]/g, ''));
             const p = cleanText.match(/01[0125][0-9]{8}/);
-            
             const lines = text.split('\n').filter(l => l.trim().length > 2);
             nameInput.value = lines[0] ? lines[0].replace(/العميل|Name|:|Customer/gi, '').trim() : "عميل";
             phoneDisp.innerText = p ? p[0] : "";
