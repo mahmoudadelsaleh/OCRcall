@@ -20,7 +20,6 @@
         #preview-box.compact { flex: 0 0 15%; }
         #video, #image-to-crop { position: absolute; top: 0; right: 0; width: 100%; height: 100%; object-fit: contain; }
         
-        /* برواز التركيز */
         .focus-frame { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 75%; height: 120px; border: 3px solid var(--warning); box-shadow: 0 0 0 1000px rgba(0,0,0,0.6); z-index: 5; pointer-events: none; display: none; border-radius: 12px; }
 
         .controls-section { flex: 1; padding: 10px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding-bottom: 60px; }
@@ -40,7 +39,7 @@
         .action-grid-custom { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; margin-top: 10px; }
         .right-side, .left-side { display: flex; flex-direction: column; gap: 8px; }
 
-        #flash-toggle { position: absolute; top: 10px; left: 10px; z-index: 10; background: rgba(0,0,0,0.5); border-radius: 50%; width: 40px; height: 40px; display: none; align-items: center; justify-content: center; color: white; border: 2px solid white; }
+        #flash-toggle { position: absolute; top: 10px; left: 10px; z-index: 10; background: rgba(0,0,0,0.5); border-radius: 50%; width: 40px; height: 40px; display: none; align-items: center; justify-content: center; color: white; border: 2px solid white; cursor: pointer; }
         .footer-brand { width: 100%; background: #000; color: var(--gold); text-align: center; padding: 12px 0; font-size: 14px; font-weight: bold; position: absolute; bottom: 0; left: 0; z-index: 100; border-top: 2px solid var(--gold); }
     </style>
 </head>
@@ -55,7 +54,7 @@
     </div>
 
     <div class="controls-section">
-        <div id="status" style="font-size:12px; font-weight:bold; color:var(--primary);">جاري التحميل...</div>
+        <div id="status" style="font-size:12px; font-weight:bold; color:var(--primary); margin-bottom:5px;">جاري تشغيل النظام...</div>
 
         <div id="init-btns" style="width:100%">
             <button class="btn btn-primary" id="btn-camera">📸 فتح الكاميرا</button>
@@ -64,7 +63,7 @@
         </div>
 
         <div id="crop-btns" style="display:none; width:100%; text-align:center;">
-            <input type="range" id="rot-slider" min="-180" max="180" step="1" value="0" style="width:90%; margin: 15px 0;">
+            <input type="range" id="rot-slider" min="-180" max="180" step="1" value="0" style="width:90%; margin: 10px 0;">
             <div class="ocr-grid">
                 <button class="btn btn-success" id="btn-ocr-off">🌐 أوفلاين</button>
                 <button class="btn btn-primary" id="btn-ocr-on" style="background:#673ab7;">🚀 أونلاين</button>
@@ -73,7 +72,7 @@
         </div>
 
         <div id="result-ui" style="display:none; width:100%; text-align:center;">
-            <input type="text" id="name-input" class="edit-field">
+            <input type="text" id="name-input" class="edit-field" placeholder="اسم العميل">
             <div class="phone-val" id="phone-display"></div>
             <button class="btn btn-warning" style="width:auto; padding:5px 20px; font-size:12px;" onclick="toggleKB()">✏️ تعديل الرقم</button>
             <div id="mini-kb" class="mini-keyboard">
@@ -110,7 +109,7 @@
 
     document.getElementById('btn-camera').onclick = async () => {
         const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-        vid.srcObject = stream; focusFrame.style.display = "block";
+        vid.srcObject = stream; vid.style.display = "block"; focusFrame.style.display = "block";
         track = stream.getVideoTracks()[0];
         if (track.getCapabilities().torch) flashBtn.style.display = "flex";
         document.getElementById('btn-camera').innerText = "📸 التقاط";
@@ -119,7 +118,7 @@
             c.width = vid.videoWidth; c.height = vid.videoHeight;
             c.getContext('2d').drawImage(vid, 0, 0);
             initCrop(c.toDataURL('image/png'));
-            stream.getTracks().forEach(t => t.stop()); vid.style.display = "none"; focusFrame.style.display = "none";
+            stream.getTracks().forEach(t => t.stop()); vid.style.display = "none"; focusFrame.style.display = "none"; flashBtn.style.display = "none";
         };
     };
 
@@ -166,7 +165,7 @@
         nameInput.value = text.split('\n')[0].trim() || "عميل";
         document.getElementById('result-ui').style.display = "block";
         document.getElementById('crop-btns').style.display = "none";
-        statusTxt.innerText = "";
+        statusTxt.innerText = "تمت العملية ✅";
         img.src = cropper.getCroppedCanvas().toDataURL();
         cropper.destroy();
     }
@@ -179,6 +178,7 @@
         const vcf = `BEGIN:VCARD\nVERSION:3.0\nFN:${nameInput.value}\nTEL;TYPE=CELL:${phoneDisp.innerText}\nEND:VCARD`;
         const a = document.createElement('a'); a.download = `${nameInput.value}.vcf`; a.href = URL.createObjectURL(new Blob([vcf], {type: "text/vcard"})); a.click();
     };
+    if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(e => console.log(e)); }); }
 </script>
 </body>
 </html>
