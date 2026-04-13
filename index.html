@@ -25,29 +25,49 @@
         .focus-frame { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80%; height: 100px; border: 2px solid var(--warning); box-shadow: 0 0 0 1000px rgba(0,0,0,0.5); z-index: 5; pointer-events: none; display: none; border-radius: 8px; }
         #flash-btn { position: absolute; top: 15px; left: 15px; z-index: 10; background: rgba(0,0,0,0.6); color: white; border: 2px solid white; width: 45px; height: 45px; border-radius: 50%; display: none; align-items: center; justify-content: center; cursor: pointer; }
 
+        /* ضبط الأزرار بمقاسات موحدة تماماً */
         .controls-section { flex: 1; padding: 10px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding-bottom: 80px; }
-        .btn { width: 95%; padding: 12px; margin: 4px 0; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; }
+        .btn { 
+            width: 90%; 
+            height: 50px; /* مقاس ثابت للكل */
+            margin: 6px 0; 
+            border-radius: 12px; 
+            border: none; 
+            font-weight: bold; 
+            cursor: pointer; 
+            font-size: 16px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 10px; 
+            box-sizing: border-box;
+        }
         
-        /* حقل الاسم والرسائل */
-        .name-container { position: relative; width: 95%; margin: 5px auto; }
-        .edit-field { width: 100%; padding: 12px; padding-left: 45px; border: 1px solid #ccc; border-radius: 12px; font-size: 16px; box-sizing: border-box; text-align: center; background: #fffbe6; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-warning { background: var(--warning); color: white; }
+        .btn-gray { background: #6c757d; color: white; }
+        .btn-dark { background: #333; color: white; }
+
+        .name-container { position: relative; width: 90%; margin: 5px auto; }
+        .edit-field { width: 100%; height: 45px; border: 1px solid #ccc; border-radius: 12px; font-size: 16px; text-align: center; background: #fffbe6; box-sizing: border-box; }
         .clear-name { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); background: var(--danger); color: white; border: none; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; }
 
         .phone-val { font-size: 32px; font-weight: bold; color: #d32f2f; text-align: center; margin: 10px auto; border: 2px dashed var(--primary); padding: 5px; border-radius: 12px; min-width: 200px; background: white; }
         
-        /* الرسائل الجاهزة */
         .chips-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; margin: 10px 0; width: 95%; }
-        .chip { background: #e9ecef; padding: 6px 12px; border-radius: 20px; font-size: 12px; cursor: pointer; border: 1px solid #ccc; white-space: nowrap; }
-        .chip:active { background: var(--gold); color: white; }
+        .chip { background: #e9ecef; padding: 8px 15px; border-radius: 20px; font-size: 12px; cursor: pointer; border: 1px solid #ccc; }
 
-        .mini-keyboard { display: none; grid-template-columns: repeat(3, 1fr); gap: 5px; background: #eee; padding: 10px; border-radius: 12px; margin: 5px auto; width: 230px; }
+        .mini-keyboard { display: none; grid-template-columns: repeat(3, 1fr); gap: 5px; background: #eee; padding: 10px; border-radius: 12px; margin: 5px auto; width: 240px; }
         .key { background: white; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 18px; text-align: center; cursor: pointer; box-shadow: 0 2px 0 #bbb; }
 
-        /* ترتيب الأزرار الجديد: يمين (اتصال/واتساب) يسار (حفظ/إعادة) */
-        .action-grid-custom { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 95%; margin: 10px auto; }
-        .side-group { display: flex; flex-direction: column; gap: 10px; }
+        /* الأزرار الأربعة: يمين (اتصال/واتساب) يسار (حفظ/جديد) */
+        .action-grid-custom { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 90%; margin: 10px auto; }
+        .side-group { display: flex; flex-direction: column; gap: 8px; }
+        .side-group .btn { width: 100%; margin: 0; }
 
-        /* الفوتر المثبت */
+        /* الفوتر الذهبي - تثبيت مطلق */
         .footer-brand { 
             width: 100%; background: #000; color: var(--gold); text-align: center; 
             padding: 15px 0; font-size: 14px; font-weight: bold; 
@@ -70,20 +90,20 @@
         <div id="status" style="font-weight:bold; color:var(--primary); margin-bottom:5px;">جاهز</div>
 
         <div id="init-btns" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
-            <button class="btn btn-primary" id="btn-camera" style="background:var(--primary)"><i class="fas fa-camera"></i> فتح الكاميرا</button>
-            <label class="btn btn-primary" style="background:#6c757d; display: flex;" for="file-in"><i class="fas fa-image"></i> رفع صورة</button>
+            <button class="btn btn-primary" id="btn-camera"><i class="fas fa-camera"></i> فتح الكاميرا</button>
+            <label class="btn btn-gray" for="file-in"><i class="fas fa-image"></i> رفع صورة</label>
             <input type="file" id="file-in" accept="image/*" style="display:none;">
-            <button class="btn btn-danger" onclick="location.reload()" style="background:#333"><i class="fas fa-sync-alt"></i> إعادة تحميل التطبيق</button>
+            <button class="btn btn-dark" onclick="location.reload()"><i class="fas fa-sync-alt"></i> إعادة تحميل التطبيق</button>
         </div>
 
         <div id="crop-btns" style="display:none; width: 100%; text-align:center;">
-            <input type="range" id="rot-slider" min="-180" max="180" step="1" value="0" style="width:90%; margin: 15px 0;">
-            <button class="btn btn-success" id="btn-ocr" style="background:var(--success)"><i class="fas fa-search"></i> قراءة البيانات (٦ ثوانٍ)</button>
-            <button class="btn btn-danger" onclick="location.reload()">🔄 إلغاء</button>
+            <input type="range" id="rot-slider" min="-180" max="180" step="1" value="0" style="width:90%; margin: 10px 0;">
+            <button class="btn btn-success" id="btn-ocr"><i class="fas fa-search"></i> قراءة البيانات (٦ ثوانٍ)</button>
+            <button class="btn btn-danger" style="width:90%; margin:auto;" onclick="location.reload()">🔄 إلغاء</button>
         </div>
 
         <div id="result-ui" style="display:none; width:100%;">
-            <button id="retry-btn" class="btn btn-primary" style="display:none; background:#0056b3; width:95%; margin:auto 5px 10px auto;"><i class="fas fa-redo-alt"></i> محاولة القراءة مرة أخرى</button>
+            <button id="retry-btn" class="btn btn-primary" style="display:none; background:#0056b3; width:90%; margin:5px auto;"><i class="fas fa-redo-alt"></i> محاولة مرة أخرى</button>
 
             <div class="name-container">
                 <input type="text" id="name-input" class="edit-field" placeholder="اسم العميل">
@@ -99,27 +119,26 @@
                 <div class="key" style="background:#ff4d4d; color:white" onclick="press('X')"><i class="fas fa-backspace"></i></div><div class="key" onclick="press('0')">0</div><div class="key" style="background:#888; color:white" onclick="press('C')">C</div>
             </div>
 
-            <div class="chips-container" id="chips-area">
-                <div class="chip" onclick="setMessage('تم استلام طلبك بنجاح.')">استلام طلب</div>
-                <div class="chip" onclick="setMessage('الطلب جاهز للتسليم الآن.')">طلب جاهز</div>
-                <div class="chip" onclick="setMessage('الدليفري في الطريق إليك.')">خرج للدليفري</div>
-                <div class="chip" onclick="setMessage('يرجى تأكيد العنوان لإرسال الطلب.')">تأكيد عنوان</div>
+            <div class="chips-container">
+                <div class="chip" onclick="msg('تم استلام طلبك.')">استلام</div>
+                <div class="chip" onclick="msg('الطلب جاهز للتسليم.')">جاهز</div>
+                <div class="chip" onclick="msg('الدليفري في الطريق.')">بالطريق</div>
             </div>
-            <textarea id="custom-msg" class="edit-field" style="height:45px; margin-bottom:10px; padding-left:10px;" placeholder="رسالة الواتساب..."></textarea>
+            <textarea id="msg-box" class="edit-field" style="height:45px; margin-bottom:10px;" placeholder="رسالة الواتساب..."></textarea>
 
             <div class="action-grid-custom">
-                <div class="side-group"> <button class="btn btn-primary" id="btn-call" style="background:var(--primary); width:100%"><i class="fas fa-phone"></i> اتصال</button>
-                    <button class="btn btn-success" id="btn-wa" style="background:var(--success); width:100%"><i class="fab fa-whatsapp"></i> واتساب</button>
+                <div class="side-group"> <button class="btn btn-primary" id="btn-call"><i class="fas fa-phone"></i> اتصال</button>
+                    <button class="btn btn-success" id="btn-wa"><i class="fab fa-whatsapp"></i> واتساب</button>
                 </div>
-                <div class="side-group"> <button class="btn btn-warning" id="btn-vcf" style="background:var(--warning); color:white; width:100%"><i class="fas fa-user-plus"></i> حفظ</button>
-                    <button class="btn btn-danger" onclick="location.reload()" style="background:var(--danger); width:100%"><i class="fas fa-redo"></i> جديد</button>
+                <div class="side-group"> <button class="btn btn-warning" id="btn-vcf" style="color:white;"><i class="fas fa-user-plus"></i> حفظ</button>
+                    <button class="btn btn-danger" onclick="location.reload()"><i class="fas fa-redo"></i> جديد</button>
                 </div>
             </div>
         </div>
     </div>
 
     <div class="footer-brand">
-        ALMAS SOLUTIONS © 2026
+        Almas Solutions®²٠٢٦
     </div>
 </div>
 
@@ -127,17 +146,17 @@
     let cropper, currentRot = 0, track = null, flashOn = false, lastImg = null;
     const img = document.getElementById('image-to-crop'), vid = document.getElementById('video');
     const phoneDisp = document.getElementById('phone-display'), nameInput = document.getElementById('name-input'), statusTxt = document.getElementById('status');
-    const retryBtn = document.getElementById('retry-btn'), customMsg = document.getElementById('custom-msg');
+    const msgBox = document.getElementById('msg-box'), retryBtn = document.getElementById('retry-btn');
 
     function arToEn(str) { return str.replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d)); }
-    function setMessage(m) { customMsg.value = m; }
+    function msg(m) { msgBox.value = m; }
 
     document.getElementById('btn-camera').onclick = async () => {
         const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
         vid.srcObject = stream; vid.style.display = "block"; document.getElementById('focus-frame').style.display = "block";
         track = stream.getVideoTracks()[0];
         if (track.getCapabilities().torch) document.getElementById('flash-btn').style.display = "flex";
-        document.getElementById('btn-camera').innerHTML = '<i class="fas fa-circle"></i> التقاط الصورة';
+        document.getElementById('btn-camera').innerHTML = '<i class="fas fa-circle"></i> التقاط';
         document.getElementById('btn-camera').onclick = () => {
             const c = document.createElement('canvas');
             c.width = vid.videoWidth; c.height = vid.videoHeight;
@@ -181,7 +200,7 @@
         let done = false;
         setTimeout(() => {
             if (!done) {
-                statusTxt.innerText = "اكتب يدوياً أو حاول مرة أخرى ⚠️";
+                statusTxt.innerText = "فشل التعرف - اكتب يدوياً ⚠️";
                 document.getElementById('result-ui').style.display = "block";
                 document.getElementById('mini-kb').style.display = "grid";
                 retryBtn.style.display = "block";
@@ -199,7 +218,7 @@
 
             document.getElementById('result-ui').style.display = "block";
             document.getElementById('crop-btns').style.display = "none";
-            statusTxt.innerText = p ? "تم استخراج البيانات ✅" : "لم يتم العثور على رقم";
+            statusTxt.innerText = p ? "تم ✅" : "لم يتم العثور على رقم";
             if (!p) retryBtn.style.display = "block";
         });
     }
@@ -210,7 +229,7 @@
         else if (phoneDisp.innerText.length < 11) phoneDisp.innerText += v;
     }
 
-    document.getElementById('btn-wa').onclick = () => window.open(`https://wa.me/2${phoneDisp.innerText}?text=${encodeURIComponent(customMsg.value)}`);
+    document.getElementById('btn-wa').onclick = () => window.open(`https://wa.me/2${phoneDisp.innerText}?text=${encodeURIComponent(msgBox.value)}`);
     document.getElementById('btn-call').onclick = () => window.location.href = `tel:${phoneDisp.innerText}`;
     document.getElementById('btn-vcf').onclick = () => {
         const vcf = `BEGIN:VCARD\nVERSION:3.0\nFN:${nameInput.value || 'عميل'}\nTEL;TYPE=CELL:${phoneDisp.innerText}\nEND:VCARD`;
