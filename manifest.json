@@ -1,13 +1,20 @@
 {
   "name": "OCRcall - تحويل الصور إلى جهات اتصال",
   "short_name": "OCRcall",
-  "description": "تطبيق لقراءة الأرقام من الصور وإجراء مكالمات وإرسال رسائل واتساب",
-  "start_url": "/",
+  "description": "تطبيق لقراءة الأرقام من الصور وإجراء مكالمات وواتساب",
+  "start_url": "/OCRcall/",
+  "scope": "/OCRcall/",
   "display": "standalone",
   "theme_color": "#000000",
   "background_color": "#ffffff",
   "orientation": "portrait",
   "icons": [
+    {
+      "src": "icon-180x180.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
     {
       "src": "icon-192x192.png",
       "sizes": "192x192",
@@ -26,7 +33,7 @@
       "name": "مسح جديد",
       "short_name": "مسح",
       "description": "بدء مسح جديد",
-      "url": "/",
+      "url": "/OCRcall/",
       "icons": [{ "src": "icon-192x192.png", "sizes": "192x192" }]
     }
   ],
