@@ -4,218 +4,230 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#1C1C1E">
-    <title>Wide-Scan OCR 2026 | Almas Solutions</title>
+    <title>Wide-Scan OCR | Almas Solutions</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root { --primary: #007AFF; --gold: #D4AF37; --success: #34C759; }
+        :root { --primary: #007AFF; --gold: #D4AF37; --success: #34C759; --dark: #1C1C1E; }
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { background: #000; font-family: system-ui; overflow: hidden; position: fixed; width: 100%; height: 100%; color: white; }
+        body { background: #000; font-family: system-ui, -apple-system; overflow: hidden; position: fixed; width: 100%; height: 100%; color: white; }
 
-        .camera-layer { position: absolute; inset: 0; z-index: 1; }
+        /* منطقة الفيديو */
+        .camera-container { position: absolute; inset: 0; z-index: 1; }
         #video { width: 100%; height: 100%; object-fit: cover; }
 
-        /* طبقة المسح المستطيلة المطورة */
-        .scanner-overlay {
+        /* واجهة المسح (المستطيل العريض) */
+        .overlay {
             position: absolute; inset: 0; z-index: 2;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             background: rgba(0,0,0,0.4);
         }
-        .scan-window {
-            width: 85%; /* زيادة العرض */
-            height: 100px; /* تقليل الارتفاع */
-            border: 2px solid rgba(255,255,255,0.6);
-            border-radius: 12px; position: relative; 
-            box-shadow: 0 0 0 2000px rgba(0,0,0,0.6);
-            transition: all 0.3s;
+        .scan-box {
+            width: 85%; height: 110px; border: 2px solid rgba(212,175,55,0.5);
+            border-radius: 15px; position: relative;
+            box-shadow: 0 0 0 5000px rgba(0,0,0,0.6); /* تعتيم ما حول المستطيل */
+            transition: all 0.3s ease;
         }
-        .scan-window.found { border-color: var(--success); border-width: 4px; box-shadow: 0 0 20px var(--success), 0 0 0 2000px rgba(0,0,0,0.5); }
+        .scan-box.success { border-color: var(--success); border-width: 4px; box-shadow: 0 0 25px var(--success), 0 0 0 5000px rgba(0,0,0,0.4); }
+
+        /* خط الليزر الذهبي */
+        .laser-line {
+            position: absolute; width: 90%; height: 2px; background: var(--gold);
+            left: 5%; top: 10%; box-shadow: 0 0 15px var(--gold);
+            animation: scanAnim 1.8s infinite ease-in-out;
+        }
+        @keyframes scanAnim { 0%, 100% { top: 10%; opacity: 0.5; } 50% { top: 85%; opacity: 1; } }
+
+        /* الأزرار العلوية */
+        .header-tools {
+            position: absolute; top: 40px; width: 100%;
+            display: flex; justify-content: space-between; padding: 0 20px; z-index: 10;
+        }
+        .circle-btn {
+            background: rgba(0,0,0,0.5); color: white; border: none;
+            width: 48px; height: 48px; border-radius: 50%; font-size: 20px;
+            display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px);
+        }
+
+        /* سـلايـدر الـتـقـريـب (Zoom Slider) */
+        .zoom-panel {
+            position: absolute; bottom: 130px; width: 80%; left: 10%; z-index: 10;
+            background: rgba(0,0,0,0.6); padding: 12px 20px; border-radius: 30px;
+            display: flex; align-items: center; gap: 15px; backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        #zoomRange { flex: 1; accent-color: var(--gold); height: 6px; cursor: pointer; }
+
+        /* اللوحة السفلية للنتائج */
+        .result-sheet {
+            position: absolute; bottom: 0; left: 0; right: 0; z-index: 100;
+            background: white; color: var(--dark); border-radius: 25px 25px 0 0;
+            padding: 25px; transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.17, 0.84, 0.44, 1);
+            max-width: 500px; margin: auto; box-shadow: 0 -10px 30px rgba(0,0,0,0.3);
+        }
+        .result-sheet.active { transform: translateY(0); }
+        .res-title { text-align: center; color: #888; font-size: 12px; font-weight: bold; margin-bottom: 5px; }
+        .phone-num { font-size: 38px; font-weight: 900; text-align: center; color: var(--primary); letter-spacing: 2px; margin-bottom: 20px; }
         
-        .laser {
-            position: absolute; width: 100%; height: 2px; background: var(--gold);
-            top: 0; left: 0; box-shadow: 0 0 12px var(--gold);
-            animation: scanning 1.5s infinite ease-in-out;
+        .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .action-btn { 
+            padding: 16px; border: none; border-radius: 15px; font-weight: 800; 
+            font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 10px;
         }
-        @keyframes scanning { 0%, 100% { top: 5%; } 50% { top: 95%; } }
-
-        /* عناصر التحكم العلوية */
-        .top-tools {
-            position: absolute; top: 45px; width: 100%;
-            display: flex; justify-content: space-between; padding: 0 25px; z-index: 10;
-        }
-        .tool-btn { background: rgba(0,0,0,0.6); color: white; border: none; width: 45px; height: 45px; border-radius: 50%; font-size: 18px; }
-
-        /* شريط الزوم (التقريب) */
-        .zoom-container {
-            position: absolute; bottom: 120px; width: 80%; left: 10%; z-index: 10;
-            display: flex; align-items: center; gap: 15px; background: rgba(0,0,0,0.5);
-            padding: 10px 20px; border-radius: 30px; backdrop-filter: blur(5px);
-        }
-        #zoomSlider { flex: 1; accent-color: var(--gold); }
-
-        /* اللوحة السفلية */
-        .bottom-sheet {
-            position: absolute; bottom: 0; left: 0; right: 0; z-index: 20;
-            background: white; color: black; border-radius: 25px 25px 0 0;
-            padding: 20px; transform: translateY(100%); transition: transform 0.4s ease;
-            max-width: 500px; margin: auto;
-        }
-        .bottom-sheet.show { transform: translateY(0); }
-        .phone-result { font-size: 35px; font-weight: 900; text-align: center; color: var(--primary); margin: 10px 0; letter-spacing: 2px; }
-        .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
-        .btn { padding: 16px; border: none; border-radius: 15px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 10px; }
         .btn-call { background: var(--primary); color: white; }
         .btn-wa { background: var(--success); color: white; }
-        .btn-close { background: #eee; color: #333; grid-column: span 2; }
+        .btn-retry { background: #eee; color: #555; grid-column: span 2; margin-top: 5px; }
 
-        #status { position: absolute; top: 100px; width: 100%; text-align: center; z-index: 5; font-size: 13px; color: var(--gold); }
+        #status-bar { position: absolute; top: 100px; width: 100%; text-align: center; z-index: 5; font-size: 13px; color: var(--gold); font-weight: 500; }
     </style>
 </head>
 <body>
 
-<div class="top-tools">
-    <button class="tool-btn" onclick="location.reload()"><i class="fas fa-sync-alt"></i></button>
-    <button class="tool-btn" id="flashBtn"><i class="fas fa-bolt"></i></button>
+<div class="header-tools">
+    <button class="circle-btn" onclick="location.reload()"><i class="fas fa-redo"></i></button>
+    <button class="circle-btn" id="flashToggle"><i class="fas fa-bolt"></i></button>
 </div>
 
-<div id="status">جاري تهيئة الماسح العريض...</div>
+<div id="status-bar">جاري تشغيل محرك Almas الذكي...</div>
 
-<div class="camera-layer">
+<div class="camera-container">
     <video id="video" autoplay playsinline></video>
 </div>
 
-<div class="scanner-overlay">
-    <div class="scan-window" id="window">
-        <div class="laser"></div>
+<div class="overlay">
+    <div class="scan-box" id="scanBox">
+        <div class="laser-line"></div>
     </div>
-    <p style="margin-top: 25px; font-size: 14px; opacity: 0.8;">ضع الرقم داخل المستطيل الذهبي</p>
+    <p style="margin-top: 25px; font-size: 14px; opacity: 0.7; font-weight: 500;">ضع رقم الهاتف داخل الإطار الذهبي</p>
 </div>
 
-<div class="zoom-container" id="zoomUI" style="display:none;">
-    <i class="fas fa-search-minus"></i>
-    <input type="range" id="zoomSlider" min="1" max="5" step="0.1" value="1">
-    <i class="fas fa-search-plus"></i>
+<div class="zoom-panel" id="zoomUI" style="display:none;">
+    <i class="fas fa-minus" style="font-size: 12px;"></i>
+    <input type="range" id="zoomRange" min="1" max="1" step="0.1" value="1">
+    <i class="fas fa-plus" style="font-size: 12px;"></i>
 </div>
 
-<div class="bottom-sheet" id="sheet">
-    <div style="text-align:center; color:#666; font-size:12px; font-weight:bold;">✨ تم الالتقاط بنجاح</div>
-    <div class="phone-result" id="resPhone">--------</div>
+<div class="result-sheet" id="resSheet">
+    <div class="res-title">✨ تم التقاط الرقم تلقائياً</div>
+    <div class="phone-num" id="displayPhone">--------</div>
     
-    <div class="btn-grid">
-        <button class="btn btn-call" id="btnCall"><i class="fas fa-phone"></i> اتصال</button>
-        <button class="btn btn-wa" id="btnWA"><i class="fab fa-whatsapp"></i> واتساب</button>
-        <button class="btn btn-close" onclick="closeSheet()">مسح رقم آخر</button>
+    <div class="actions">
+        <button class="action-btn btn-call" id="callNow"><i class="fas fa-phone"></i> اتصال</button>
+        <button class="action-btn btn-wa" id="waNow"><i class="fab fa-whatsapp"></i> واتساب</button>
+        <button class="action-btn btn-retry" onclick="restartScan()">مسح رقم جديد</button>
     </div>
 </div>
 
-<canvas id="helperCanvas" style="display:none;"></canvas>
+<canvas id="hiddenCanvas" style="display:none;"></canvas>
 
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script>
     let worker = null;
     let stream = null;
-    let track = null;
-    let isScanning = true;
-    let lastFound = "";
+    let videoTrack = null;
+    let scanningActive = true;
+    let detectedPhone = "";
 
-    async function init() {
+    // 1. تشغيل المحرك (OCR)
+    async function setupOCR() {
         worker = await Tesseract.createWorker('ara+eng');
         await worker.setParameters({ tessedit_char_whitelist: '0123456789' });
-        document.getElementById('status').innerText = "✅ مستعد للمسح التلقائي";
-        startCamera();
+        document.getElementById('status-bar').innerText = "✅ الماسح جاهز ومستعد";
+        startLiveCamera();
     }
 
-    async function startCamera() {
+    // 2. تشغيل الكاميرا وإعداد الزوم
+    async function startLiveCamera() {
         try {
             stream = await navigator.mediaDevices.getUserMedia({ 
                 video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } } 
             });
-            const video = document.getElementById('video');
-            video.srcObject = stream;
-            track = stream.getVideoTracks()[0];
+            const videoEl = document.getElementById('video');
+            videoEl.srcObject = stream;
+            videoTrack = stream.getVideoTracks()[0];
 
-            // تفعيل واجهة الزوم إذا كان الجهاز يدعمها
-            const caps = track.getCapabilities();
+            // إعداد السلايدر (Zoom)
+            const caps = videoTrack.getCapabilities();
             if (caps.zoom) {
-                const zUI = document.getElementById('zoomUI');
-                zUI.style.display = 'flex';
-                const slider = document.getElementById('zoomSlider');
-                slider.min = caps.zoom.min;
-                slider.max = caps.zoom.max;
-                slider.step = caps.zoom.step;
-                slider.oninput = (e) => {
-                    track.applyConstraints({ advanced: [{ zoom: e.target.value }] });
+                document.getElementById('zoomUI').style.display = 'flex';
+                const zSlider = document.getElementById('zoomRange');
+                zSlider.min = caps.zoom.min;
+                zSlider.max = caps.zoom.max;
+                zSlider.step = caps.zoom.step;
+                zSlider.value = caps.zoom.min;
+                zSlider.oninput = (e) => {
+                    videoTrack.applyConstraints({ advanced: [{ zoom: e.target.value }] });
                 };
             }
 
-            requestAnimationFrame(scanLoop);
-        } catch (e) {
-            alert("خطأ: تأكد من تفعيل الكاميرا وبروتوكول HTTPS");
+            requestAnimationFrame(processFrame);
+        } catch (err) {
+            alert("يرجى التأكد من تشغيل HTTPS والسماح بالكاميرا");
         }
     }
 
-    async function scanLoop() {
-        if (!isScanning) return;
+    // 3. حلقة المعالجة التلقائية (بدون تصوير يدوي)
+    async function processFrame() {
+        if (!scanningActive) return;
 
         const video = document.getElementById('video');
         if (video.readyState === video.HAVE_ENOUGH_DATA) {
-            const canvas = document.getElementById('helperCanvas');
+            const canvas = document.getElementById('hiddenCanvas');
             const ctx = canvas.getContext('2d');
 
-            // حساب أبعاد المنطقة المستطيلة العريضة بدقة
+            // حساب أبعاد القص للمستطيل العريض
             const scaleX = video.videoWidth / window.innerWidth;
             const scaleY = video.videoHeight / window.innerHeight;
-            
-            const scanW = (window.innerWidth * 0.85) * scaleX;
-            const scanH = 100 * scaleY;
-            const scanX = (video.videoWidth - scanW) / 2;
-            const scanY = (video.videoHeight - scanH) / 2;
+            const cw = (window.innerWidth * 0.85) * scaleX;
+            const ch = 110 * scaleY;
+            const cx = (video.videoWidth - cw) / 2;
+            const cy = (video.videoHeight - ch) / 2;
 
-            canvas.width = scanW;
-            canvas.height = scanH;
-            
-            ctx.drawImage(video, scanX, scanY, scanW, scanH, 0, 0, scanW, scanH);
+            canvas.width = cw;
+            canvas.height = ch;
+            ctx.drawImage(video, cx, cy, cw, ch, 0, 0, cw, ch);
 
             const { data: { text } } = await worker.recognize(canvas);
-            const match = text.replace(/\s/g, '').match(/01[0125][0-9]{8}/);
+            const found = text.replace(/\s/g, '').match(/01[0125][0-9]{8}/);
 
-            if (match) {
-                onFound(match[0]);
+            if (found) {
+                onSuccess(found[0]);
             }
         }
-        if (isScanning) setTimeout(scanLoop, 400); // سرعة مسح عالية
+        if (scanningActive) setTimeout(processFrame, 450); // سرعة معالجة متوازنة
     }
 
-    function onFound(phone) {
-        if (phone === lastFound) return;
-        isScanning = false;
-        lastFound = phone;
+    function onSuccess(phone) {
+        if (phone === detectedPhone) return;
+        scanningActive = false;
+        detectedPhone = phone;
         
-        if (navigator.vibrate) navigator.vibrate([100, 50, 100]); // اهتزاز مميز عند النجاح
+        if (navigator.vibrate) navigator.vibrate([100, 50, 100]); // اهتزاز النجاح
 
-        document.getElementById('window').classList.add('found');
-        document.getElementById('resPhone').innerText = phone;
-        document.getElementById('sheet').classList.add('show');
+        document.getElementById('scanBox').classList.add('success');
+        document.getElementById('displayPhone').innerText = phone;
+        document.getElementById('resSheet').classList.add('active');
     }
 
-    window.closeSheet = () => {
-        document.getElementById('sheet').classList.remove('show');
-        document.getElementById('window').classList.remove('found');
-        lastFound = "";
-        isScanning = true;
-        scanLoop();
+    window.restartScan = () => {
+        document.getElementById('resSheet').classList.remove('active');
+        document.getElementById('scanBox').classList.remove('success');
+        detectedPhone = "";
+        scanningActive = true;
+        processFrame();
     };
 
-    document.getElementById('btnCall').onclick = () => window.location.href = `tel:${lastFound}`;
-    document.getElementById('btnWA').onclick = () => window.open(`https://wa.me/2${lastFound}`);
+    document.getElementById('callNow').onclick = () => window.location.href = `tel:${detectedPhone}`;
+    document.getElementById('waNow').onclick = () => window.open(`https://wa.me/2${detectedPhone}`);
     
-    document.getElementById('flashBtn').onclick = async () => {
-        if (track) {
-            const state = track.getSettings().torch;
-            await track.applyConstraints({ advanced: [{ torch: !state }] });
+    // زر الفلاش
+    document.getElementById('flashToggle').onclick = async () => {
+        if (videoTrack) {
+            const isFlashOn = videoTrack.getSettings().torch;
+            await videoTrack.applyConstraints({ advanced: [{ torch: !isFlashOn }] });
         }
     };
 
-    init();
+    setupOCR();
 </script>
 </body>
 </html>
