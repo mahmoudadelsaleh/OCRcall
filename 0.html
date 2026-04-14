@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ماستر هوم - OCR Call</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #3498db;
+            --bg-color: #f4f7f6;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .container {
+            width: 90%;
+            max-width: 500px;
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        h1 { color: var(--primary-color); font-size: 1.5rem; margin-bottom: 25px; }
+        .grid { display: grid; gap: 15px; }
+        .card {
+            display: block;
+            text-decoration: none;
+            background: var(--accent-color);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            font-weight: bold;
+            transition: transform 0.2s, background 0.2s;
+        }
+        .card:active { transform: scale(0.95); background: #2980b9; }
+        .offline-badge {
+            margin-top: 20px;
+            font-size: 0.8rem;
+            color: #27ae60;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>اختر الإصدار المناسب لك</h1>
+    <div class="grid">
+        <a href="1.html" class="card">الإصدار الأول (V1)</a>
+        <a href="2.html" class="card">الإصدار الثاني (V2)</a>
+        <a href="3.html" class="card">الإصدار الثالث (V3)</a>
+        <a href="4.html" class="card">الإصدار الرابع (V4)</a>
+    </div>
+    <p id="status" class="offline-badge">جاهز للعمل بدون إنترنت ✅</p>
+</div>
+
+<script>
+    // تسجيل Service Worker للعمل بدون إنترنت
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            const swCode = `
+                const cacheName = 'ocr-v1';
+                const assets = ['./0.html', './1.html', './2.html', './3.html', './4.html'];
+                self.addEventListener('install', e => {
+                    e.waitUntil(caches.open(cacheName).then(cache => cache.addAll(assets)));
+                });
+                self.addEventListener('fetch', e => {
+                    e.respondWith(caches.match(e.request).then(res => res || fetch(e.request)));
+                });
+            `;
+            const blob = new Blob([swCode], {type: 'application/javascript'});
+            const workerUrl = URL.createObjectURL(blob);
+            navigator.serviceWorker.register(workerUrl).then(() => {
+                document.getElementById('status').style.display = 'block';
+            });
+        });
+    }
+</script>
+
+</body>
+</html>
