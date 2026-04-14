@@ -64,15 +64,15 @@
         .spinner{width:40px;height:40px;border:4px solid white;border-top-color:var(--gold);border-radius:50%;animation:spin 0.8s linear infinite;}
         @keyframes spin{to{transform:rotate(360deg);}}
         
-        /* نافذة الاقتصاص */
+        /* نافذة الاقتصاص - بدون هوامش سوداء */
         .crop-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:4000;flex-direction:column;padding:10px;}
         .crop-modal.show{display:flex;}
         .crop-header{display:flex;justify-content:space-between;align-items:center;padding:10px;background:#1C1C1E;border-radius:12px;margin-bottom:10px;}
         .crop-header h3{color:white;font-size:14px;}
         .crop-close{background:var(--danger);border:none;color:white;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;}
         .crop-image-wrapper{flex:1;background:black;border-radius:12px;overflow:hidden;position:relative;margin-bottom:10px;touch-action:none;}
-        #crop-stage{width:100%;height:100%;position:relative;overflow:hidden;background:black;}
-        #crop-img{position:absolute;transform-origin:center center;cursor:grab;max-width:none;user-select:none;}
+        #crop-stage{width:100%;height:100%;position:relative;overflow:hidden;background:black;display:flex;justify-content:center;align-items:center;}
+        #crop-img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;cursor:grab;transform-origin:center center;user-select:none;}
         .crop-controls{background:#1C1C1E;padding:12px;border-radius:12px;display:flex;flex-direction:column;gap:10px;}
         .rotate-slider{display:flex;align-items:center;gap:10px;color:white;}
         .rotate-slider input{flex:1;height:4px;border-radius:5px;}
@@ -85,12 +85,10 @@
 <body>
 <div class="status-bar"><span>📱 OCRcall²⁰²⁶</span><span id="offlineBadge" style="display:none;">⚠️ غير متصل</span></div>
 <div class="app-container">
-    <!-- منطقة عرض الصورة المقتصصة -->
     <div class="cropped-preview-area" id="croppedPreviewArea">
         <button class="clear-cropped" id="clearCroppedBtn">✖</button>
         <img id="croppedPreviewImg" alt="Cropped preview">
     </div>
-    
     <div class="controls">
         <div class="status" id="status">✅ جاهز للاستخدام</div>
         <div id="startScreen" class="start-buttons">
@@ -105,14 +103,8 @@
                 <div class="tab" data-tab="history">📋 السجل</div>
             </div>
             <div id="mainTab" class="tab-content active">
-                <div class="name-field">
-                    <input id="customerName" placeholder="اسم العميل">
-                    <button class="clear-name" onclick="document.getElementById('customerName').value=''">✖</button>
-                </div>
-                <div class="phone-wrapper">
-                    <div class="phone-number" id="phoneDisplay"></div>
-                    <button class="edit-phone-btn" id="editPhoneBtn">✏️</button>
-                </div>
+                <div class="name-field"><input id="customerName" placeholder="اسم العميل"><button class="clear-name" onclick="document.getElementById('customerName').value=''">✖</button></div>
+                <div class="phone-wrapper"><div class="phone-number" id="phoneDisplay"></div><button class="edit-phone-btn" id="editPhoneBtn">✏️</button></div>
                 <div class="keyboard" id="keyboard">
                     <div class="key" onclick="addDigit(9)">9</div><div class="key" onclick="addDigit(8)">8</div><div class="key" onclick="addDigit(7)">7</div>
                     <div class="key" onclick="addDigit(6)">6</div><div class="key" onclick="addDigit(5)">5</div><div class="key" onclick="addDigit(4)">4</div>
@@ -138,10 +130,7 @@
                 </div>
             </div>
             <div id="historyTab" class="tab-content">
-                <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                    <span>📋 سجل المسح</span>
-                    <button class="btn-danger" id="clearCacheBtn" style="padding:4px 8px; font-size:11px;">🗑️ مسح الكاش</button>
-                </div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:5px;"><span>📋 سجل المسح</span><button class="btn-danger" id="clearCacheBtn" style="padding:4px 8px; font-size:11px;">🗑️ مسح الكاش</button></div>
                 <div id="historyList" style="max-height:220px; overflow:auto;">📭 لا توجد بيانات</div>
             </div>
         </div>
@@ -149,29 +138,13 @@
     </div>
 </div>
 
-<!-- نافذة الاقتصاص -->
 <div id="cropModal" class="crop-modal">
-    <div class="crop-header">
-        <h3>🔍 تكبير/تصغير بإصبعين | ✂️ اسحب لتحديد المنطقة</h3>
-        <button class="crop-close" id="closeCropModal">✕</button>
-    </div>
-    <div class="crop-image-wrapper" id="cropWrapper">
-        <div id="crop-stage">
-            <img id="crop-img" draggable="false">
-        </div>
-    </div>
+    <div class="crop-header"><h3>🔍 تكبير/تصغير بإصبعين | ✂️ اسحب لتحديد المنطقة</h3><button class="crop-close" id="closeCropModal">✕</button></div>
+    <div class="crop-image-wrapper" id="cropWrapper"><div id="crop-stage"><img id="crop-img" draggable="false"></div></div>
     <div class="crop-controls">
-        <div class="rotate-slider">
-            <i class="fas fa-undo-alt" style="color:white;"></i>
-            <input type="range" id="rotateSlider" min="-180" max="180" value="0" step="1">
-            <i class="fas fa-redo-alt" style="color:white;"></i>
-            <span id="rotateValue" style="color:#FF9500; width:40px;">0°</span>
-        </div>
+        <div class="rotate-slider"><i class="fas fa-undo-alt" style="color:white;"></i><input type="range" id="rotateSlider" min="-180" max="180" value="0" step="1"><i class="fas fa-redo-alt" style="color:white;"></i><span id="rotateValue" style="color:#FF9500; width:40px;">0°</span></div>
         <div class="coord-info" id="coordInfo">👆 اسحب لتحديد المستطيل</div>
-        <div class="crop-actions">
-            <button class="btn btn-secondary" id="resetCropBtn">⟳ إعادة ضبط</button>
-            <button class="btn btn-success" id="applyCropBtn">✅ قص ومسح</button>
-        </div>
+        <div class="crop-actions"><button class="btn btn-secondary" id="resetCropBtn">⟳ إعادة ضبط</button><button class="btn btn-success" id="applyCropBtn">✅ قص ومسح</button></div>
     </div>
 </div>
 
@@ -187,6 +160,7 @@
     let scale=1, translateX=0, translateY=0, initialPinchDist=0, initialScale=1, initialTranslateX=0, initialTranslateY=0;
     let isPanning=false, lastTouchX=0, lastTouchY=0;
     let cropImgDom=null, cropStage=null;
+    let imgDisplayWidth=0, imgDisplayHeight=0, imgNaturalWidth=0, imgNaturalHeight=0;
     
     const video=document.getElementById('video'), cameraDiv=document.getElementById('cameraPreview');
     const phoneSpan=document.getElementById('phoneDisplay'), nameInput=document.getElementById('customerName');
@@ -201,7 +175,7 @@
     window.loadFromHistory=function(id){let tx=db.transaction(['scans'],'readonly'); tx.objectStore('scans').get(id).onsuccess=e=>{let d=e.target.result; if(d){nameInput.value=d.name; phoneSpan.innerText=d.phone; msgArea.value=d.message||''; statusDiv.innerText='✅ تم تحميل من السجل'; document.querySelector('.tab[data-tab="main"]').click();}};};
     function clearCache(){if(confirm('⚠️ مسح كل السجل؟')){db.transaction(['scans'],'readwrite').objectStore('scans').clear().onsuccess=()=>{nextId=1; loadHistory(); statusDiv.innerText='🗑️ تم مسح الكاش';};}}
     
-    async function runOCR(imageSrc){if(!tesseractReady){statusDiv.innerText='⏳ OCR قيد التحميل...'; return;} statusDiv.innerText='⏳ جاري القراءة...'; try{loadingDiv.style.display='flex'; let{data:{text}}=await Tesseract.recognize(imageSrc,'ara+eng'); loadingDiv.style.display='none'; let phoneMatch=text.match(/01[0125][0-9]{8}/); let phone=phoneMatch?phoneMatch[0]:''; let lines=text.split('\n'); let name=lines.find(l=>l.trim().length>2&&l.trim().length<30&&!/[0-9]/.test(l))||''; if(phone){phoneSpan.innerText=phone; statusDiv.innerText='✅ تم العثور على الرقم'; keyboardDiv.classList.remove('show'); editing=false; editBtn.classList.remove('active'); editBtn.innerText='✏️';} else{phoneSpan.innerText=''; statusDiv.innerText='⚠️ لم يُعثر على رقم';} if(name)nameInput.value=name.trim();}catch(e){loadingDiv.style.display='none'; statusDiv.innerText='❌ فشل OCR'; console.error(e);}}
+    async function runOCR(imageSrc){if(!tesseractReady){statusDiv.innerText='⏳ OCR قيد التحميل...'; return;} statusDiv.innerText='⏳ جاري القراءة...'; try{loadingDiv.style.display='flex'; let{data:{text}}=await Tesseract.recognize(imageSrc,'ara+eng'); loadingDiv.style.display='none'; let phoneMatch=text.match(/01[0125][0-9]{8}/); let phone=phoneMatch?phoneMatch[0]:''; let lines=text.split('\n'); let name=lines.find(l=>l.trim().length>2&&l.trim().length<30&&!/[0-9]/.test(l))||''; if(phone){phoneSpan.innerText=phone; statusDiv.innerText='✅ تم العثور على الرقم'; keyboardDiv.classList.remove('show'); editing=false; editBtn.classList.remove('active'); editBtn.innerText='✏️';} else{phoneSpan.innerText=''; statusDiv.innerText='⚠️ لم يُعثر على رقم';} if(name)nameInput.value=name.trim();}catch(e){loadingDiv.style.display='none'; statusDiv.innerText='❌ فشل OCR';}}
     
     function showCroppedPreview(imgData){croppedPreviewImg.src=imgData; croppedPreviewArea.classList.add('show');}
     document.getElementById('clearCroppedBtn').onclick=()=>{croppedPreviewArea.classList.remove('show'); croppedPreviewImg.src='';};
@@ -213,11 +187,11 @@
     
     function updateTransform(){if(cropImgDom){cropImgDom.style.transform=`translate(${translateX}px, ${translateY}px) scale(${scale}) rotate(${currentRotation}deg)`;}}
     
-    function initCropModal(imgSrc){cropImgDom=document.getElementById('crop-img'); cropStage=document.getElementById('crop-stage'); scale=1; translateX=0; translateY=0; currentRotation=0; document.getElementById('rotateSlider').value=0; document.getElementById('rotateValue').innerText='0°'; cropStart=null; cropEnd=null; imgElement.onload=()=>{cropImgDom.src=imgElement.src; cropImgDom.style.width=imgElement.width+'px'; cropImgDom.style.height=imgElement.height+'px'; updateTransform();}; imgElement.src=imgSrc; setupCropEvents();}
+    function initCropModal(imgSrc){cropImgDom=document.getElementById('crop-img'); cropStage=document.getElementById('crop-stage'); scale=1; translateX=0; translateY=0; currentRotation=0; document.getElementById('rotateSlider').value=0; document.getElementById('rotateValue').innerText='0°'; cropStart=null; cropEnd=null; imgElement.onload=()=>{imgNaturalWidth=imgElement.width; imgNaturalHeight=imgElement.height; cropImgDom.src=imgElement.src; cropImgDom.style.width='auto'; cropImgDom.style.height='auto'; cropImgDom.style.maxWidth='100%'; cropImgDom.style.maxHeight='100%'; updateTransform(); setTimeout(()=>{fitImageToStage();},50);}; imgElement.src=imgSrc; setupCropEvents();}
     
-    function setupCropEvents(){cropImgDom.addEventListener('touchstart',onTouchStart,{passive:false}); cropImgDom.addEventListener('touchmove',onTouchMove,{passive:false}); cropImgDom.addEventListener('touchend',onTouchEnd); cropImgDom.addEventListener('mousedown',onMouseDown); window.addEventListener('mousemove',onMouseMove); window.addEventListener('mouseup',onMouseUp);}
+    function fitImageToStage(){if(!cropStage||!cropImgDom)return; let stageRect=cropStage.getBoundingClientRect(); let imgRect=cropImgDom.getBoundingClientRect(); let scaleX=stageRect.width/imgRect.width; let scaleY=stageRect.height/imgRect.height; let fitScale=Math.min(scaleX,scaleY); scale=fitScale; translateX=0; translateY=0; updateTransform();}
     
-    function getImageCoords(clientX,clientY){let rect=cropImgDom.getBoundingClientRect(); let x=(clientX-rect.left)/rect.width; let y=(clientY-rect.top)/rect.height; x=Math.min(Math.max(x,0),1)*imgElement.width; y=Math.min(Math.max(y,0),1)*imgElement.height; return{x,y};}
+    function getImageCoords(clientX,clientY){let rect=cropImgDom.getBoundingClientRect(); let x=(clientX-rect.left)/rect.width; let y=(clientY-rect.top)/rect.height; x=Math.min(Math.max(x,0),1)*imgNaturalWidth; y=Math.min(Math.max(y,0),1)*imgNaturalHeight; return{x,y};}
     
     function onTouchStart(e){e.preventDefault(); let touches=e.touches; if(touches.length===2){let dx=touches[0].clientX-touches[1].clientX, dy=touches[0].clientY-touches[1].clientY; initialPinchDist=Math.hypot(dx,dy); initialScale=scale; isPanning=false;} else if(touches.length===1){let point=getImageCoords(touches[0].clientX,touches[0].clientY); cropStart=point; cropEnd=null; isPanning=false;} lastTouchX=touches[0].clientX; lastTouchY=touches[0].clientY; initialTranslateX=translateX; initialTranslateY=translateY;}
     
@@ -225,18 +199,20 @@
     
     function onTouchEnd(e){if(cropStart&&cropEnd){let x=Math.min(cropStart.x,cropEnd.x), y=Math.min(cropStart.y,cropEnd.y), w=Math.abs(cropEnd.x-cropStart.x), h=Math.abs(cropEnd.y-cropStart.y); if(w>10&&h>10) statusDiv.innerText='✅ تم تحديد المستطيل، اضغط "قص ومسح"'; else{cropStart=null; cropEnd=null; drawSelectionOverlay();}} initialPinchDist=0;}
     
-    function onMouseDown(e){let point=getImageCoords(e.clientX,e.clientY); cropStart=point; cropEnd=null; isPanning=false;}
+    function onMouseDown(e){let point=getImageCoords(e.clientX,e.clientY); cropStart=point; cropEnd=null;}
     function onMouseMove(e){if(cropStart){let point=getImageCoords(e.clientX,e.clientY); cropEnd=point; drawSelectionOverlay();}}
     function onMouseUp(e){if(cropStart&&cropEnd){let x=Math.min(cropStart.x,cropEnd.x), y=Math.min(cropStart.y,cropEnd.y), w=Math.abs(cropEnd.x-cropStart.x), h=Math.abs(cropEnd.y-cropStart.y); if(w>10&&h>10) statusDiv.innerText='✅ تم تحديد المستطيل، اضغط "قص ومسح"'; else{cropStart=null; cropEnd=null; drawSelectionOverlay();}}}
     
-    function drawSelectionOverlay(){let overlay=document.querySelector('.selection-overlay'); if(!overlay){overlay=document.createElement('div'); overlay.className='selection-overlay'; cropStage.appendChild(overlay);} overlay.innerHTML=''; if(cropStart&&cropEnd){let rect=cropImgDom.getBoundingClientRect(); let stageRect=cropStage.getBoundingClientRect(); let scaleX=rect.width/imgElement.width, scaleY=rect.height/imgElement.height; let x=Math.min(cropStart.x,cropEnd.x)*scaleX; let y=Math.min(cropStart.y,cropEnd.y)*scaleY; let w=Math.abs(cropEnd.x-cropStart.x)*scaleX; let h=Math.abs(cropEnd.y-cropStart.y)*scaleY; let div=document.createElement('div'); div.style.position='absolute'; div.style.left=x+'px'; div.style.top=y+'px'; div.style.width=w+'px'; div.style.height=h+'px'; div.style.border='3px solid #FF9500'; div.style.background='rgba(0,150,255,0.2)'; div.style.boxShadow='0 0 0 2000px rgba(0,0,0,0.5)'; overlay.appendChild(div); document.getElementById('coordInfo').innerHTML=`📐 المستطيل: ${Math.round(Math.abs(cropEnd.x-cropStart.x))}x${Math.round(Math.abs(cropEnd.y-cropStart.y))}`;} else{document.getElementById('coordInfo').innerHTML='👆 اسحب لتحديد المنطقة المستطيلة';}}
+    function drawSelectionOverlay(){let overlay=document.querySelector('.selection-overlay'); if(!overlay){overlay=document.createElement('div'); overlay.className='selection-overlay'; cropStage.appendChild(overlay);} overlay.innerHTML=''; if(cropStart&&cropEnd){let rect=cropImgDom.getBoundingClientRect(); let scaleX=rect.width/imgNaturalWidth, scaleY=rect.height/imgNaturalHeight; let x=Math.min(cropStart.x,cropEnd.x)*scaleX; let y=Math.min(cropStart.y,cropEnd.y)*scaleY; let w=Math.abs(cropEnd.x-cropStart.x)*scaleX; let h=Math.abs(cropEnd.y-cropStart.y)*scaleY; let div=document.createElement('div'); div.style.position='absolute'; div.style.left=x+'px'; div.style.top=y+'px'; div.style.width=w+'px'; div.style.height=h+'px'; div.style.border='3px solid #FF9500'; div.style.background='rgba(0,150,255,0.2)'; div.style.boxShadow='0 0 0 2000px rgba(0,0,0,0.5)'; overlay.appendChild(div); document.getElementById('coordInfo').innerHTML=`📐 المستطيل: ${Math.round(Math.abs(cropEnd.x-cropStart.x))}x${Math.round(Math.abs(cropEnd.y-cropStart.y))}`;} else{document.getElementById('coordInfo').innerHTML='👆 اسحب لتحديد المنطقة المستطيلة';}}
     
-    function applyCrop(){if(!cropStart||!cropEnd){statusDiv.innerText='⚠️ لم تحدد منطقة بعد'; return;} let x=Math.min(cropStart.x,cropEnd.x), y=Math.min(cropStart.y,cropEnd.y), w=Math.abs(cropEnd.x-cropStart.x), h=Math.abs(cropEnd.y-cropStart.y); if(w<10||h<10){statusDiv.innerText='⚠️ المنطقة صغيرة جداً'; return;} let canvas=document.createElement('canvas'); canvas.width=w; canvas.height=h; let ctx=canvas.getContext('2d'); let tempCanvas=document.createElement('canvas'); tempCanvas.width=imgElement.width; tempCanvas.height=imgElement.height; let tempCtx=tempCanvas.getContext('2d'); tempCtx.save(); tempCtx.translate(imgElement.width/2,imgElement.height/2); tempCtx.rotate(currentRotation*Math.PI/180); tempCtx.drawImage(imgElement,-imgElement.width/2,-imgElement.height/2,imgElement.width,imgElement.height); tempCtx.restore(); ctx.drawImage(tempCanvas,x,y,w,h,0,0,w,h); let croppedData=canvas.toDataURL('image/png'); cropModal.classList.remove('show'); showCroppedPreview(croppedData); runOCR(croppedData);}
+    function applyCrop(){if(!cropStart||!cropEnd){statusDiv.innerText='⚠️ لم تحدد منطقة بعد'; return;} let x=Math.min(cropStart.x,cropEnd.x), y=Math.min(cropStart.y,cropEnd.y), w=Math.abs(cropEnd.x-cropStart.x), h=Math.abs(cropEnd.y-cropStart.y); if(w<10||h<10){statusDiv.innerText='⚠️ المنطقة صغيرة جداً'; return;} let canvas=document.createElement('canvas'); canvas.width=w; canvas.height=h; let ctx=canvas.getContext('2d'); let tempCanvas=document.createElement('canvas'); tempCanvas.width=imgNaturalWidth; tempCanvas.height=imgNaturalHeight; let tempCtx=tempCanvas.getContext('2d'); tempCtx.save(); tempCtx.translate(imgNaturalWidth/2,imgNaturalHeight/2); tempCtx.rotate(currentRotation*Math.PI/180); tempCtx.drawImage(imgElement,-imgNaturalWidth/2,-imgNaturalHeight/2,imgNaturalWidth,imgNaturalHeight); tempCtx.restore(); ctx.drawImage(tempCanvas,x,y,w,h,0,0,w,h); let croppedData=canvas.toDataURL('image/png'); cropModal.classList.remove('show'); showCroppedPreview(croppedData); runOCR(croppedData);}
     
     function resetCrop(){cropStart=null; cropEnd=null; drawSelectionOverlay(); statusDiv.innerText='🔄 تم إعادة الضبط';}
     function updateRotation(){currentRotation=parseInt(document.getElementById('rotateSlider').value); document.getElementById('rotateValue').innerText=currentRotation+'°'; updateTransform(); drawSelectionOverlay();}
     
-    function openCropModal(imgSrc){cropModal.classList.add('show'); initCropModal(imgSrc);}
+    function openCropModal(imgSrc){cropModal.classList.add('show'); setTimeout(()=>{initCropModal(imgSrc);},100);}
+    
+    function setupCropEvents(){cropImgDom.addEventListener('touchstart',onTouchStart,{passive:false}); cropImgDom.addEventListener('touchmove',onTouchMove,{passive:false}); cropImgDom.addEventListener('touchend',onTouchEnd); cropImgDom.addEventListener('mousedown',onMouseDown); window.addEventListener('mousemove',onMouseMove); window.addEventListener('mouseup',onMouseUp);}
     
     document.getElementById('rotateSlider').addEventListener('input',updateRotation);
     document.getElementById('applyCropBtn').onclick=applyCrop;
