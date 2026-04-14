@@ -4,24 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#000000">
-    <meta name="apple-mobile-web-app-capable" content="yes">
     <title>OCRcall²⁰²⁶ | Almas Solutions</title>
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192x192.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+        *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;}
         body{background:#F2F2F7;font-family:system-ui;overflow:hidden;position:fixed;width:100%;height:100%;}
         :root{--primary:#007AFF;--success:#34C759;--danger:#FF3B30;--gold:#D4AF37;--dark:#1C1C1E;--brown:#5D4037;}
         .status-bar{background:var(--dark);color:white;padding:6px 12px;display:flex;justify-content:space-between;font-size:12px;height:38px;}
         .app-container{height:calc(100% - 38px);max-width:500px;margin:auto;background:white;display:flex;flex-direction:column;overflow:hidden;}
-        
-        /* منطقة عرض الصورة المقتصصة */
         .cropped-preview-area{width:100%;aspect-ratio:3/1;background:#000;position:relative;overflow:hidden;flex-shrink:0;display:none;}
         .cropped-preview-area.show{display:block;}
         .cropped-preview-area img{width:100%;height:100%;object-fit:contain;}
         .clear-cropped{position:absolute;top:5px;left:5px;background:rgba(0,0,0,0.7);border:none;color:white;width:30px;height:30px;border-radius:50%;cursor:pointer;z-index:10;}
-        
         .controls{flex:1;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:8px;}
         .status{background:#F2F2F7;padding:6px;text-align:center;border-radius:10px;font-size:12px;color:var(--primary);}
         .btn{padding:8px;border:none;border-radius:10px;font-weight:bold;font-size:12px;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;}
@@ -64,22 +60,23 @@
         .spinner{width:40px;height:40px;border:4px solid white;border-top-color:var(--gold);border-radius:50%;animation:spin 0.8s linear infinite;}
         @keyframes spin{to{transform:rotate(360deg);}}
         
-        /* نافذة الصورة - بدون حاوية سوداء زائدة */
-        .image-editor-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:4000;flex-direction:column;padding:10px;}
-        .image-editor-modal.show{display:flex;}
+        /* محرر الصورة */
+        .editor-modal{display:none;position:fixed;inset:0;background:#000;z-index:4000;flex-direction:column;padding:10px;}
+        .editor-modal.show{display:flex;}
         .editor-header{display:flex;justify-content:space-between;align-items:center;padding:10px;background:#1C1C1E;border-radius:12px;margin-bottom:10px;}
         .editor-header h3{color:white;font-size:14px;}
         .editor-close{background:var(--danger);border:none;color:white;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;}
-        .image-stage{flex:1;background:#000;border-radius:12px;overflow:hidden;position:relative;margin-bottom:10px;touch-action:none;display:flex;justify-content:center;align-items:center;}
-        #edit-img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;cursor:grab;transform-origin:center center;user-select:none;}
+        .image-stage{flex:1;background:#000;border-radius:12px;overflow:hidden;position:relative;margin-bottom:10px;touch-action:none;}
+        #edit-img{position:absolute;top:50%;left:50%;transform-origin:center center;cursor:grab;max-width:none;user-select:none;}
         .editor-controls{background:#1C1C1E;padding:12px;border-radius:12px;display:flex;flex-direction:column;gap:10px;}
-        .action-buttons{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;}
-        .action-buttons button{width:50px;height:44px;background:#2C2C2E;border:none;color:white;border-radius:10px;font-size:16px;cursor:pointer;}
-        .action-buttons button:active{transform:scale(0.95);}
+        .action-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;}
+        .action-btn{width:50px;height:44px;background:#2C2C2E;border:none;color:white;border-radius:10px;font-size:16px;cursor:pointer;}
+        .action-btn:active{transform:scale(0.95);}
         .rotate-slider{display:flex;align-items:center;gap:10px;color:white;}
         .rotate-slider input{flex:1;height:4px;border-radius:5px;}
-        .crop-btn{background:var(--success);color:white;border:none;padding:10px;border-radius:10px;font-size:14px;font-weight:bold;cursor:pointer;margin-top:5px;}
-        .selection-overlay{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10;}
+        .crop-action-btn{background:var(--success);color:white;border:none;padding:10px;border-radius:10px;font-size:14px;font-weight:bold;cursor:pointer;margin-top:5px;}
+        .coord-info{color:#FF9500;font-size:11px;text-align:center;margin-top:5px;}
+        .selection-overlay{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:20;}
     </style>
 </head>
 <body>
@@ -98,10 +95,7 @@
             <button class="btn btn-secondary" id="refreshPageBtn">🔄 إعادة تحميل الصفحة</button>
         </div>
         <div id="resultScreen" style="display:none; flex-direction:column; gap:8px;">
-            <div class="tabs">
-                <div class="tab active" data-tab="main">📝 رئيسي</div>
-                <div class="tab" data-tab="history">📋 السجل</div>
-            </div>
+            <div class="tabs"><div class="tab active" data-tab="main">📝 رئيسي</div><div class="tab" data-tab="history">📋 السجل</div></div>
             <div id="mainTab" class="tab-content active">
                 <div class="name-field"><input id="customerName" placeholder="اسم العميل"><button class="clear-name" onclick="document.getElementById('customerName').value=''">✖</button></div>
                 <div class="phone-wrapper"><div class="phone-number" id="phoneDisplay"></div><button class="edit-phone-btn" id="editPhoneBtn">✏️</button></div>
@@ -129,29 +123,26 @@
                     <button class="btn btn-danger" id="resetAppBtn">🗑️ جديد</button>
                 </div>
             </div>
-            <div id="historyTab" class="tab-content">
-                <div style="display:flex; justify-content:space-between; margin-bottom:5px;"><span>📋 سجل المسح</span><button class="btn-danger" id="clearCacheBtn" style="padding:4px 8px; font-size:11px;">🗑️ مسح الكاش</button></div>
-                <div id="historyList" style="max-height:220px; overflow:auto;">📭 لا توجد بيانات</div>
-            </div>
+            <div id="historyTab" class="tab-content"><div style="display:flex; justify-content:space-between; margin-bottom:5px;"><span>📋 سجل المسح</span><button class="btn-danger" id="clearCacheBtn" style="padding:4px 8px; font-size:11px;">🗑️ مسح الكاش</button></div><div id="historyList" style="max-height:220px; overflow:auto;">📭 لا توجد بيانات</div></div>
         </div>
         <div class="footer">Almas Solutions®²⁰²⁶ | PWA</div>
     </div>
 </div>
 
-<!-- نافذة تحرير الصورة -->
-<div id="imageEditorModal" class="image-editor-modal">
-    <div class="editor-header"><h3>✏️ تحريك | تكبير | تدوير | ثم اسحب لتحديد المستطيل</h3><button class="editor-close" id="closeEditorBtn">✕</button></div>
+<!-- محرر الصورة -->
+<div id="editorModal" class="editor-modal">
+    <div class="editor-header"><h3>🔍 تكبير/تصغير بإصبعين | ✂️ اضغط زر التحديد ثم اسحب</h3><button class="editor-close" id="closeEditorBtn">✕</button></div>
     <div class="image-stage" id="imageStage"><img id="edit-img" draggable="false"></div>
     <div class="editor-controls">
-        <div class="action-buttons">
-            <button id="zoomOutBtn"><i class="fas fa-search-minus"></i></button>
-            <button id="zoomInBtn"><i class="fas fa-search-plus"></i></button>
-            <button id="resetViewBtn"><i class="fas fa-sync-alt"></i></button>
+        <div class="action-row">
+            <button class="action-btn" id="zoomOutBtn"><i class="fas fa-search-minus"></i></button>
+            <button class="action-btn" id="zoomInBtn"><i class="fas fa-search-plus"></i></button>
+            <button class="action-btn" id="resetViewBtn"><i class="fas fa-sync-alt"></i></button>
+            <button class="action-btn" id="selectRectBtn" style="background:#FF9500;"><i class="fas fa-vector-square"></i> تحديد</button>
         </div>
         <div class="rotate-slider"><i class="fas fa-undo-alt" style="color:white;"></i><input type="range" id="rotateSlider" min="-180" max="180" value="0" step="1"><i class="fas fa-redo-alt" style="color:white;"></i><span id="rotateValue" style="color:#FF9500; width:40px;">0°</span></div>
-        <button class="crop-btn" id="startCropBtn">✂️ تحديد المستطيل (اسحب على الصورة)</button>
-        <div class="coord-info" id="coordInfo" style="color:#FF9500; font-size:11px; text-align:center;">👆 اسحب لتحديد المنطقة المستطيلة</div>
-        <button class="crop-btn" id="applyCropBtn" style="background:#007AFF; display:none;">✅ قص وإضافة للتحليل</button>
+        <div class="coord-info" id="coordInfo">👆 اضغط "تحديد" ثم اسحب على الصورة</div>
+        <button class="crop-action-btn" id="applyCropBtn" style="display:none;">✅ قص وإضافة للتحليل</button>
     </div>
 </div>
 
@@ -162,19 +153,19 @@
 <script>
     let stream=null, torch=false, tesseractReady=false, db=null, nextId=1, editing=false;
     let currentRawImage=null, currentRotation=0;
-    let cropStart=null, cropEnd=null, isCropMode=false;
+    let cropStart=null, cropEnd=null, isSelectMode=false;
     let imgElement=new Image();
-    let scale=1, translateX=0, translateY=0, initialPinchDist=0, initialScale=1, initialTranslateX=0, initialTranslateY=0;
-    let isPanning=false, lastTouchX=0, lastTouchY=0;
-    let editImgDom=null, imageStage=null;
-    let imgNaturalWidth=0, imgNaturalHeight=0;
+    let scale=1, translateX=0, translateY=0, initialPinchDist=0, initialScale=1;
+    let isPanning=false, lastTouchX=0, lastTouchY=0, initialTranslateX=0, initialTranslateY=0;
+    let editImgDom=null, imageStage=null, stageRect=null;
+    let imgNaturalWidth=0, imgNaturalHeight=0, imgDisplayWidth=0, imgDisplayHeight=0;
     
     const video=document.getElementById('video'), cameraDiv=document.getElementById('cameraPreview');
     const phoneSpan=document.getElementById('phoneDisplay'), nameInput=document.getElementById('customerName');
     const msgArea=document.getElementById('msgInput'), statusDiv=document.getElementById('status'), keyboardDiv=document.getElementById('keyboard'), editBtn=document.getElementById('editPhoneBtn');
-    const loadingDiv=document.getElementById('loading'), editorModal=document.getElementById('imageEditorModal');
+    const loadingDiv=document.getElementById('loading'), editorModal=document.getElementById('editorModal');
     const croppedPreviewArea=document.getElementById('croppedPreviewArea'), croppedPreviewImg=document.getElementById('croppedPreviewImg');
-    const applyCropBtn=document.getElementById('applyCropBtn'), startCropBtn=document.getElementById('startCropBtn');
+    const applyCropBtn=document.getElementById('applyCropBtn'), selectRectBtn=document.getElementById('selectRectBtn');
     
     function openDB(){return new Promise(r=>{let req=indexedDB.open('OCRcallDB',1); req.onupgradeneeded=e=>{let db=e.target.result; if(!db.objectStoreNames.contains('scans')) db.createObjectStore('scans',{keyPath:'id',autoIncrement:true}).createIndex('date','date');}; req.onsuccess=()=>{db=req.result; r();};});}
     function saveToHistory(name,phone,msg){if(!phone)return; let scan={id:nextId++, name:name||'عميل', phone, message:msg||'', date:new Date().toISOString(), dateFormatted:new Date().toLocaleString('ar-EG')}; let tx=db.transaction(['scans'],'readwrite'); tx.objectStore('scans').add(scan).onsuccess=()=>{statusDiv.innerText='✅ حفظ بالسجل'; loadHistory();};}
@@ -190,42 +181,38 @@
     
     async function startCamera(){try{let s=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}}); stream=s; video.srcObject=s; cameraDiv.style.display='block'; document.querySelector('.focus-rectangle').style.display='block'; let track=s.getVideoTracks()[0]; if(track.getCapabilities().torch)document.getElementById('flashBtn').style.display='flex'; document.getElementById('cameraBtn').innerHTML='📸 التقاط صورة'; document.getElementById('cameraBtn').onclick=()=>capturePhoto(); statusDiv.innerText='📷 الكاميرا جاهزة';}catch(e){statusDiv.innerText='❌ لا يمكن الوصول للكاميرا';}}
     function capturePhoto(){let canvas=document.createElement('canvas'); canvas.width=video.videoWidth; canvas.height=video.videoHeight; canvas.getContext('2d').drawImage(video,0,0); if(stream)stream.getTracks().forEach(t=>t.stop()); let imgData=canvas.toDataURL('image/png'); currentRawImage=imgData; cameraDiv.style.display='none'; document.getElementById('startScreen').style.display='none'; document.getElementById('resultScreen').style.display='flex'; openEditor(imgData);}
-    
     function handleUpload(file){let reader=new FileReader(); reader.onload=e=>{currentRawImage=e.target.result; document.getElementById('startScreen').style.display='none'; document.getElementById('resultScreen').style.display='flex'; openEditor(currentRawImage);}; reader.readAsDataURL(file);}
     
-    function updateTransform(){if(editImgDom){editImgDom.style.transform=`translate(${translateX}px, ${translateY}px) scale(${scale}) rotate(${currentRotation}deg)`;}}
+    function updateTransform(){if(editImgDom){editImgDom.style.transform=`translate(-50%, -50%) translate(${translateX}px, ${translateY}px) scale(${scale}) rotate(${currentRotation}deg)`;}}
+    function centerImage(){if(!imageStage||!editImgDom)return; let stageRect=imageStage.getBoundingClientRect(); let imgRect=editImgDom.getBoundingClientRect(); let scaleX=stageRect.width/imgRect.width; let scaleY=stageRect.height/imgRect.height; let fitScale=Math.min(scaleX,scaleY)*0.9; scale=fitScale; translateX=0; translateY=0; updateTransform();}
     
-    function fitImageToStage(){if(!imageStage||!editImgDom)return; let stageRect=imageStage.getBoundingClientRect(); let imgRect=editImgDom.getBoundingClientRect(); if(imgRect.width===0||imgRect.height===0)return; let scaleX=stageRect.width/imgRect.width; let scaleY=stageRect.height/imgRect.height; let fitScale=Math.min(scaleX,scaleY)*0.95; scale=fitScale; translateX=0; translateY=0; updateTransform();}
-    
-    function openEditor(imgSrc){editorModal.classList.add('show'); editImgDom=document.getElementById('edit-img'); imageStage=document.getElementById('imageStage'); scale=1; translateX=0; translateY=0; currentRotation=0; document.getElementById('rotateSlider').value=0; document.getElementById('rotateValue').innerText='0°'; cropStart=null; cropEnd=null; isCropMode=false; applyCropBtn.style.display='none'; startCropBtn.style.display='block'; startCropBtn.innerText='✂️ تحديد المستطيل (اسحب على الصورة)'; imgElement.onload=()=>{imgNaturalWidth=imgElement.width; imgNaturalHeight=imgElement.height; editImgDom.src=imgElement.src; editImgDom.style.width='auto'; editImgDom.style.height='auto'; editImgDom.style.maxWidth='100%'; editImgDom.style.maxHeight='100%'; setTimeout(()=>{fitImageToStage();},50); updateTransform();}; imgElement.src=imgSrc; setupEvents();}
+    function openEditor(imgSrc){editorModal.classList.add('show'); editImgDom=document.getElementById('edit-img'); imageStage=document.getElementById('imageStage'); scale=1; translateX=0; translateY=0; currentRotation=0; document.getElementById('rotateSlider').value=0; document.getElementById('rotateValue').innerText='0°'; cropStart=null; cropEnd=null; isSelectMode=false; selectRectBtn.style.background='#2C2C2E'; applyCropBtn.style.display='none'; imgElement.onload=()=>{imgNaturalWidth=imgElement.width; imgNaturalHeight=imgElement.height; editImgDom.src=imgElement.src; editImgDom.style.position='absolute'; editImgDom.style.top='50%'; editImgDom.style.left='50%'; editImgDom.style.width=imgNaturalWidth+'px'; editImgDom.style.height=imgNaturalHeight+'px'; setTimeout(()=>{centerImage();},50); updateTransform();}; imgElement.src=imgSrc; setupEvents();}
     
     function getImageCoords(clientX,clientY){let rect=editImgDom.getBoundingClientRect(); let x=(clientX-rect.left)/rect.width; let y=(clientY-rect.top)/rect.height; x=Math.min(Math.max(x,0),1)*imgNaturalWidth; y=Math.min(Math.max(y,0),1)*imgNaturalHeight; return{x,y};}
     
-    function onTouchStart(e){e.preventDefault(); let touches=e.touches; if(touches.length===2){let dx=touches[0].clientX-touches[1].clientX, dy=touches[0].clientY-touches[1].clientY; initialPinchDist=Math.hypot(dx,dy); initialScale=scale; isPanning=false;} else if(touches.length===1){if(isCropMode){let point=getImageCoords(touches[0].clientX,touches[0].clientY); cropStart=point; cropEnd=null;} else{isPanning=true; lastTouchX=touches[0].clientX; lastTouchY=touches[0].clientY; initialTranslateX=translateX; initialTranslateY=translateY;}} lastTouchX=touches[0].clientX; lastTouchY=touches[0].clientY;}
+    function onTouchStart(e){e.preventDefault(); let touches=e.touches; if(touches.length===2){let dx=touches[0].clientX-touches[1].clientX, dy=touches[0].clientY-touches[1].clientY; initialPinchDist=Math.hypot(dx,dy); initialScale=scale; isPanning=false;} else if(touches.length===1){if(isSelectMode){let point=getImageCoords(touches[0].clientX,touches[0].clientY); cropStart=point; cropEnd=null;} else{isPanning=true; lastTouchX=touches[0].clientX; lastTouchY=touches[0].clientY; initialTranslateX=translateX; initialTranslateY=translateY;}}}
+    function onTouchMove(e){e.preventDefault(); let touches=e.touches; if(touches.length===2){let dx=touches[0].clientX-touches[1].clientX, dy=touches[0].clientY-touches[1].clientY; let dist=Math.hypot(dx,dy); if(initialPinchDist>0){scale=Math.min(Math.max(initialScale*(dist/initialPinchDist),0.5),5); updateTransform();}} else if(touches.length===1){if(isSelectMode&&cropStart){let point=getImageCoords(touches[0].clientX,touches[0].clientY); cropEnd=point; drawSelectionOverlay();} else if(isPanning){let deltaX=touches[0].clientX-lastTouchX; let deltaY=touches[0].clientY-lastTouchY; translateX=initialTranslateX+deltaX; translateY=initialTranslateY+deltaY; updateTransform();}}}
+    function onTouchEnd(e){if(isSelectMode&&cropStart&&cropEnd){let x=Math.min(cropStart.x,cropEnd.x), y=Math.min(cropStart.y,cropEnd.y), w=Math.abs(cropEnd.x-cropStart.x), h=Math.abs(cropEnd.y-cropStart.y); if(w>10&&h>10){statusDiv.innerText='✅ تم التحديد، اضغط "قص وإضافة للتحليل"'; applyCropBtn.style.display='block';} else{cropStart=null; cropEnd=null; drawSelectionOverlay();}} initialPinchDist=0; isPanning=false;}
     
-    function onTouchMove(e){e.preventDefault(); let touches=e.touches; if(touches.length===2){let dx=touches[0].clientX-touches[1].clientX, dy=touches[0].clientY-touches[1].clientY; let dist=Math.hypot(dx,dy); if(initialPinchDist>0){scale=Math.min(Math.max(initialScale*(dist/initialPinchDist),0.5),5); updateTransform();}} else if(touches.length===1){if(isCropMode&&cropStart){let point=getImageCoords(touches[0].clientX,touches[0].clientY); cropEnd=point; drawSelectionOverlay();} else if(isPanning){let deltaX=touches[0].clientX-lastTouchX; let deltaY=touches[0].clientY-lastTouchY; translateX=initialTranslateX+deltaX; translateY=initialTranslateY+deltaY; updateTransform();}}}
+    function onMouseDown(e){if(isSelectMode){let point=getImageCoords(e.clientX,e.clientY); cropStart=point; cropEnd=null; e.preventDefault();}}
+    function onMouseMove(e){if(isSelectMode&&cropStart){let point=getImageCoords(e.clientX,e.clientY); cropEnd=point; drawSelectionOverlay(); e.preventDefault();}}
+    function onMouseUp(e){if(isSelectMode&&cropStart&&cropEnd){let x=Math.min(cropStart.x,cropEnd.x), y=Math.min(cropStart.y,cropEnd.y), w=Math.abs(cropEnd.x-cropStart.x), h=Math.abs(cropEnd.y-cropStart.y); if(w>10&&h>10){statusDiv.innerText='✅ تم التحديد، اضغط "قص وإضافة للتحليل"'; applyCropBtn.style.display='block';} else{cropStart=null; cropEnd=null; drawSelectionOverlay();}}}
     
-    function onTouchEnd(e){if(isCropMode&&cropStart&&cropEnd){let x=Math.min(cropStart.x,cropEnd.x), y=Math.min(cropStart.y,cropEnd.y), w=Math.abs(cropEnd.x-cropStart.x), h=Math.abs(cropEnd.y-cropStart.y); if(w>10&&h>10){statusDiv.innerText='✅ تم تحديد المستطيل، اضغط "قص وإضافة للتحليل"'; applyCropBtn.style.display='block'; startCropBtn.style.display='none';} else{cropStart=null; cropEnd=null; drawSelectionOverlay();}} initialPinchDist=0; isPanning=false;}
+    function drawSelectionOverlay(){let overlay=document.querySelector('.selection-overlay'); if(!overlay){overlay=document.createElement('div'); overlay.className='selection-overlay'; imageStage.appendChild(overlay);} overlay.innerHTML=''; if(cropStart&&cropEnd){let rect=editImgDom.getBoundingClientRect(); let scaleX=rect.width/imgNaturalWidth, scaleY=rect.height/imgNaturalHeight; let x=Math.min(cropStart.x,cropEnd.x)*scaleX; let y=Math.min(cropStart.y,cropEnd.y)*scaleY; let w=Math.abs(cropEnd.x-cropStart.x)*scaleX; let h=Math.abs(cropEnd.y-cropStart.y)*scaleY; let div=document.createElement('div'); div.style.position='absolute'; div.style.left=x+'px'; div.style.top=y+'px'; div.style.width=w+'px'; div.style.height=h+'px'; div.style.border='3px solid #FF9500'; div.style.background='rgba(0,150,255,0.2)'; div.style.boxShadow='0 0 0 2000px rgba(0,0,0,0.5)'; overlay.appendChild(div); document.getElementById('coordInfo').innerHTML=`📐 المنطقة: ${Math.round(w)}x${Math.round(h)}`;} else{document.getElementById('coordInfo').innerHTML='👆 اضغط "تحديد" ثم اسحب على الصورة';}}
     
-    function onMouseDown(e){if(isCropMode){let point=getImageCoords(e.clientX,e.clientY); cropStart=point; cropEnd=null; e.preventDefault();}}
-    function onMouseMove(e){if(isCropMode&&cropStart){let point=getImageCoords(e.clientX,e.clientY); cropEnd=point; drawSelectionOverlay(); e.preventDefault();}}
-    function onMouseUp(e){if(isCropMode&&cropStart&&cropEnd){let x=Math.min(cropStart.x,cropEnd.x), y=Math.min(cropStart.y,cropEnd.y), w=Math.abs(cropEnd.x-cropStart.x), h=Math.abs(cropEnd.y-cropStart.y); if(w>10&&h>10){statusDiv.innerText='✅ تم تحديد المستطيل، اضغط "قص وإضافة للتحليل"'; applyCropBtn.style.display='block'; startCropBtn.style.display='none';} else{cropStart=null; cropEnd=null; drawSelectionOverlay();}}}
+    function applyCropFunc(){if(!cropStart||!cropEnd){statusDiv.innerText='⚠️ لم تحدد منطقة'; return;} let x=Math.min(cropStart.x,cropEnd.x), y=Math.min(cropStart.y,cropEnd.y), w=Math.abs(cropEnd.x-cropStart.x), h=Math.abs(cropEnd.y-cropStart.y); if(w<10||h<10){statusDiv.innerText='⚠️ المنطقة صغيرة جداً'; return;} let canvas=document.createElement('canvas'); canvas.width=w; canvas.height=h; let ctx=canvas.getContext('2d'); let tempCanvas=document.createElement('canvas'); tempCanvas.width=imgNaturalWidth; tempCanvas.height=imgNaturalHeight; let tempCtx=tempCanvas.getContext('2d'); tempCtx.save(); tempCtx.translate(imgNaturalWidth/2,imgNaturalHeight/2); tempCtx.rotate(currentRotation*Math.PI/180); tempCtx.drawImage(imgElement,-imgNaturalWidth/2,-imgNaturalHeight/2,imgNaturalWidth,imgNaturalHeight); tempCtx.restore(); ctx.drawImage(tempCanvas,x,y,w,h,0,0,w,h); let croppedData=canvas.toDataURL('image/png'); editorModal.classList.remove('show'); showCroppedPreview(croppedData); runOCR(croppedData);}
     
-    function drawSelectionOverlay(){let overlay=document.querySelector('.selection-overlay'); if(!overlay){overlay=document.createElement('div'); overlay.className='selection-overlay'; imageStage.appendChild(overlay);} overlay.innerHTML=''; if(cropStart&&cropEnd){let rect=editImgDom.getBoundingClientRect(); let scaleX=rect.width/imgNaturalWidth, scaleY=rect.height/imgNaturalHeight; let x=Math.min(cropStart.x,cropEnd.x)*scaleX; let y=Math.min(cropStart.y,cropEnd.y)*scaleY; let w=Math.abs(cropEnd.x-cropStart.x)*scaleX; let h=Math.abs(cropEnd.y-cropStart.y)*scaleY; let div=document.createElement('div'); div.style.position='absolute'; div.style.left=x+'px'; div.style.top=y+'px'; div.style.width=w+'px'; div.style.height=h+'px'; div.style.border='3px solid #FF9500'; div.style.background='rgba(0,150,255,0.2)'; div.style.boxShadow='0 0 0 2000px rgba(0,0,0,0.5)'; overlay.appendChild(div); document.getElementById('coordInfo').innerHTML=`📐 المستطيل: ${Math.round(Math.abs(cropEnd.x-cropStart.x))}x${Math.round(Math.abs(cropEnd.y-cropStart.y))}`;} else{document.getElementById('coordInfo').innerHTML='👆 اسحب لتحديد المنطقة المستطيلة';}}
-    
-    function applyCrop(){if(!cropStart||!cropEnd){statusDiv.innerText='⚠️ لم تحدد منطقة بعد'; return;} let x=Math.min(cropStart.x,cropEnd.x), y=Math.min(cropStart.y,cropEnd.y), w=Math.abs(cropEnd.x-cropStart.x), h=Math.abs(cropEnd.y-cropStart.y); if(w<10||h<10){statusDiv.innerText='⚠️ المنطقة صغيرة جداً'; return;} let canvas=document.createElement('canvas'); canvas.width=w; canvas.height=h; let ctx=canvas.getContext('2d'); let tempCanvas=document.createElement('canvas'); tempCanvas.width=imgNaturalWidth; tempCanvas.height=imgNaturalHeight; let tempCtx=tempCanvas.getContext('2d'); tempCtx.save(); tempCtx.translate(imgNaturalWidth/2,imgNaturalHeight/2); tempCtx.rotate(currentRotation*Math.PI/180); tempCtx.drawImage(imgElement,-imgNaturalWidth/2,-imgNaturalHeight/2,imgNaturalWidth,imgNaturalHeight); tempCtx.restore(); ctx.drawImage(tempCanvas,x,y,w,h,0,0,w,h); let croppedData=canvas.toDataURL('image/png'); editorModal.classList.remove('show'); showCroppedPreview(croppedData); runOCR(croppedData);}
-    
-    function resetView(){scale=1; translateX=0; translateY=0; updateTransform(); setTimeout(()=>{fitImageToStage();},50);}
+    function resetView(){scale=1; translateX=0; translateY=0; updateTransform(); setTimeout(()=>{centerImage();},50);}
     function zoomIn(){scale=Math.min(scale+0.2,4); updateTransform();}
     function zoomOut(){scale=Math.max(scale-0.2,0.5); updateTransform();}
     function updateRotation(){currentRotation=parseInt(document.getElementById('rotateSlider').value); document.getElementById('rotateValue').innerText=currentRotation+'°'; updateTransform(); drawSelectionOverlay();}
-    function startCropMode(){isCropMode=true; startCropBtn.style.background='#FF9500'; startCropBtn.innerText='✂️ وضع التحديد نشط (اسحب)'; cropStart=null; cropEnd=null; drawSelectionOverlay(); statusDiv.innerText='✂️ اسحب على الصورة لتحديد المنطقة';}
+    function enableSelectMode(){isSelectMode=true; cropStart=null; cropEnd=null; drawSelectionOverlay(); selectRectBtn.style.background='#FF9500'; statusDiv.innerText='✂️ وضع التحديد نشط، اسحب على الصورة';}
     
     function setupEvents(){editImgDom.addEventListener('touchstart',onTouchStart,{passive:false}); editImgDom.addEventListener('touchmove',onTouchMove,{passive:false}); editImgDom.addEventListener('touchend',onTouchEnd); editImgDom.addEventListener('mousedown',onMouseDown); window.addEventListener('mousemove',onMouseMove); window.addEventListener('mouseup',onMouseUp);}
     
     document.getElementById('rotateSlider').addEventListener('input',updateRotation);
-    document.getElementById('applyCropBtn').onclick=applyCrop;
-    document.getElementById('startCropBtn').onclick=startCropMode;
+    document.getElementById('applyCropBtn').onclick=applyCropFunc;
+    document.getElementById('selectRectBtn').onclick=enableSelectMode;
     document.getElementById('closeEditorBtn').onclick=()=>{editorModal.classList.remove('show'); resetApp();};
     document.getElementById('zoomInBtn').onclick=zoomIn;
     document.getElementById('zoomOutBtn').onclick=zoomOut;
