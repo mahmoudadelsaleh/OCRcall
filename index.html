@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#000000">
+    <meta name="apple-mobile-web-app-capable" content="yes">
     <title>OCRcall²⁰²⁶ | Almas Solutions</title>
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192x192.png">
@@ -157,8 +158,8 @@
     let imgElement=new Image();
     let scale=1, translateX=0, translateY=0, initialPinchDist=0, initialScale=1;
     let isPanning=false, lastTouchX=0, lastTouchY=0, initialTranslateX=0, initialTranslateY=0;
-    let editImgDom=null, imageStage=null, stageRect=null;
-    let imgNaturalWidth=0, imgNaturalHeight=0, imgDisplayWidth=0, imgDisplayHeight=0;
+    let editImgDom=null, imageStage=null;
+    let imgNaturalWidth=0, imgNaturalHeight=0;
     
     const video=document.getElementById('video'), cameraDiv=document.getElementById('cameraPreview');
     const phoneSpan=document.getElementById('phoneDisplay'), nameInput=document.getElementById('customerName');
@@ -186,17 +187,25 @@
     function updateTransform(){if(editImgDom){editImgDom.style.transform=`translate(-50%, -50%) translate(${translateX}px, ${translateY}px) scale(${scale}) rotate(${currentRotation}deg)`;}}
     function centerImage(){if(!imageStage||!editImgDom)return; let stageRect=imageStage.getBoundingClientRect(); let imgRect=editImgDom.getBoundingClientRect(); let scaleX=stageRect.width/imgRect.width; let scaleY=stageRect.height/imgRect.height; let fitScale=Math.min(scaleX,scaleY)*0.9; scale=fitScale; translateX=0; translateY=0; updateTransform();}
     
-    function openEditor(imgSrc){editorModal.classList.add('show'); editImgDom=document.getElementById('edit-img'); imageStage=document.getElementById('imageStage'); scale=1; translateX=0; translateY=0; currentRotation=0; document.getElementById('rotateSlider').value=0; document.getElementById('rotateValue').innerText='0°'; cropStart=null; cropEnd=null; isSelectMode=false; selectRectBtn.style.background='#2C2C2E'; applyCropBtn.style.display='none'; imgElement.onload=()=>{imgNaturalWidth=imgElement.width; imgNaturalHeight=imgElement.height; editImgDom.src=imgElement.src; editImgDom.style.position='absolute'; editImgDom.style.top='50%'; editImgDom.style.left='50%'; editImgDom.style.width=imgNaturalWidth+'px'; editImgDom.style.height=imgNaturalHeight+'px'; setTimeout(()=>{centerImage();},50); updateTransform();}; imgElement.src=imgSrc; setupEvents();}
+    // دالة تحويل إحداثيات اللمس إلى إحداثيات الصورة بدقة 100%
+    function getImageCoords(clientX, clientY) {
+        let rect = editImgDom.getBoundingClientRect();
+        let x = (clientX - rect.left) / rect.width;
+        let y = (clientY - rect.top) / rect.height;
+        x = Math.min(Math.max(x, 0), 1);
+        y = Math.min(Math.max(y, 0), 1);
+        return { x: x * imgNaturalWidth, y: y * imgNaturalHeight };
+    }
     
-    function getImageCoords(clientX,clientY){let rect=editImgDom.getBoundingClientRect(); let x=(clientX-rect.left)/rect.width; let y=(clientY-rect.top)/rect.height; x=Math.min(Math.max(x,0),1)*imgNaturalWidth; y=Math.min(Math.max(y,0),1)*imgNaturalHeight; return{x,y};}
+    function openEditor(imgSrc){editorModal.classList.add('show'); editImgDom=document.getElementById('edit-img'); imageStage=document.getElementById('imageStage'); scale=1; translateX=0; translateY=0; currentRotation=0; document.getElementById('rotateSlider').value=0; document.getElementById('rotateValue').innerText='0°'; cropStart=null; cropEnd=null; isSelectMode=false; selectRectBtn.style.background='#2C2C2E'; selectRectBtn.style.color='white'; applyCropBtn.style.display='none'; imgElement.onload=()=>{imgNaturalWidth=imgElement.width; imgNaturalHeight=imgElement.height; editImgDom.src=imgElement.src; editImgDom.style.position='absolute'; editImgDom.style.top='50%'; editImgDom.style.left='50%'; editImgDom.style.width=imgNaturalWidth+'px'; editImgDom.style.height=imgNaturalHeight+'px'; setTimeout(()=>{centerImage();},50); updateTransform();}; imgElement.src=imgSrc; setupEvents();}
     
-    function onTouchStart(e){e.preventDefault(); let touches=e.touches; if(touches.length===2){let dx=touches[0].clientX-touches[1].clientX, dy=touches[0].clientY-touches[1].clientY; initialPinchDist=Math.hypot(dx,dy); initialScale=scale; isPanning=false;} else if(touches.length===1){if(isSelectMode){let point=getImageCoords(touches[0].clientX,touches[0].clientY); cropStart=point; cropEnd=null;} else{isPanning=true; lastTouchX=touches[0].clientX; lastTouchY=touches[0].clientY; initialTranslateX=translateX; initialTranslateY=translateY;}}}
+    function onTouchStart(e){e.preventDefault(); let touches=e.touches; if(touches.length===2){let dx=touches[0].clientX-touches[1].clientX, dy=touches[0].clientY-touches[1].clientY; initialPinchDist=Math.hypot(dx,dy); initialScale=scale; isPanning=false;} else if(touches.length===1){if(isSelectMode){let point=getImageCoords(touches[0].clientX,touches[0].clientY); cropStart=point; cropEnd=null; drawSelectionOverlay();} else{isPanning=true; lastTouchX=touches[0].clientX; lastTouchY=touches[0].clientY; initialTranslateX=translateX; initialTranslateY=translateY;}}}
     function onTouchMove(e){e.preventDefault(); let touches=e.touches; if(touches.length===2){let dx=touches[0].clientX-touches[1].clientX, dy=touches[0].clientY-touches[1].clientY; let dist=Math.hypot(dx,dy); if(initialPinchDist>0){scale=Math.min(Math.max(initialScale*(dist/initialPinchDist),0.5),5); updateTransform();}} else if(touches.length===1){if(isSelectMode&&cropStart){let point=getImageCoords(touches[0].clientX,touches[0].clientY); cropEnd=point; drawSelectionOverlay();} else if(isPanning){let deltaX=touches[0].clientX-lastTouchX; let deltaY=touches[0].clientY-lastTouchY; translateX=initialTranslateX+deltaX; translateY=initialTranslateY+deltaY; updateTransform();}}}
-    function onTouchEnd(e){if(isSelectMode&&cropStart&&cropEnd){let x=Math.min(cropStart.x,cropEnd.x), y=Math.min(cropStart.y,cropEnd.y), w=Math.abs(cropEnd.x-cropStart.x), h=Math.abs(cropEnd.y-cropStart.y); if(w>10&&h>10){statusDiv.innerText='✅ تم التحديد، اضغط "قص وإضافة للتحليل"'; applyCropBtn.style.display='block';} else{cropStart=null; cropEnd=null; drawSelectionOverlay();}} initialPinchDist=0; isPanning=false;}
+    function onTouchEnd(e){if(isSelectMode&&cropStart&&cropEnd){let w=Math.abs(cropEnd.x-cropStart.x), h=Math.abs(cropEnd.y-cropStart.y); if(w>10&&h>10){statusDiv.innerText='✅ تم التحديد، اضغط "قص وإضافة للتحليل"'; applyCropBtn.style.display='block';} else{cropStart=null; cropEnd=null; drawSelectionOverlay();}} initialPinchDist=0; isPanning=false;}
     
-    function onMouseDown(e){if(isSelectMode){let point=getImageCoords(e.clientX,e.clientY); cropStart=point; cropEnd=null; e.preventDefault();}}
+    function onMouseDown(e){if(isSelectMode){let point=getImageCoords(e.clientX,e.clientY); cropStart=point; cropEnd=null; drawSelectionOverlay(); e.preventDefault();}}
     function onMouseMove(e){if(isSelectMode&&cropStart){let point=getImageCoords(e.clientX,e.clientY); cropEnd=point; drawSelectionOverlay(); e.preventDefault();}}
-    function onMouseUp(e){if(isSelectMode&&cropStart&&cropEnd){let x=Math.min(cropStart.x,cropEnd.x), y=Math.min(cropStart.y,cropEnd.y), w=Math.abs(cropEnd.x-cropStart.x), h=Math.abs(cropEnd.y-cropStart.y); if(w>10&&h>10){statusDiv.innerText='✅ تم التحديد، اضغط "قص وإضافة للتحليل"'; applyCropBtn.style.display='block';} else{cropStart=null; cropEnd=null; drawSelectionOverlay();}}}
+    function onMouseUp(e){if(isSelectMode&&cropStart&&cropEnd){let w=Math.abs(cropEnd.x-cropStart.x), h=Math.abs(cropEnd.y-cropStart.y); if(w>10&&h>10){statusDiv.innerText='✅ تم التحديد، اضغط "قص وإضافة للتحليل"'; applyCropBtn.style.display='block';} else{cropStart=null; cropEnd=null; drawSelectionOverlay();}}}
     
     function drawSelectionOverlay(){let overlay=document.querySelector('.selection-overlay'); if(!overlay){overlay=document.createElement('div'); overlay.className='selection-overlay'; imageStage.appendChild(overlay);} overlay.innerHTML=''; if(cropStart&&cropEnd){let rect=editImgDom.getBoundingClientRect(); let scaleX=rect.width/imgNaturalWidth, scaleY=rect.height/imgNaturalHeight; let x=Math.min(cropStart.x,cropEnd.x)*scaleX; let y=Math.min(cropStart.y,cropEnd.y)*scaleY; let w=Math.abs(cropEnd.x-cropStart.x)*scaleX; let h=Math.abs(cropEnd.y-cropStart.y)*scaleY; let div=document.createElement('div'); div.style.position='absolute'; div.style.left=x+'px'; div.style.top=y+'px'; div.style.width=w+'px'; div.style.height=h+'px'; div.style.border='3px solid #FF9500'; div.style.background='rgba(0,150,255,0.2)'; div.style.boxShadow='0 0 0 2000px rgba(0,0,0,0.5)'; overlay.appendChild(div); document.getElementById('coordInfo').innerHTML=`📐 المنطقة: ${Math.round(w)}x${Math.round(h)}`;} else{document.getElementById('coordInfo').innerHTML='👆 اضغط "تحديد" ثم اسحب على الصورة';}}
     
@@ -206,7 +215,7 @@
     function zoomIn(){scale=Math.min(scale+0.2,4); updateTransform();}
     function zoomOut(){scale=Math.max(scale-0.2,0.5); updateTransform();}
     function updateRotation(){currentRotation=parseInt(document.getElementById('rotateSlider').value); document.getElementById('rotateValue').innerText=currentRotation+'°'; updateTransform(); drawSelectionOverlay();}
-    function enableSelectMode(){isSelectMode=true; cropStart=null; cropEnd=null; drawSelectionOverlay(); selectRectBtn.style.background='#FF9500'; statusDiv.innerText='✂️ وضع التحديد نشط، اسحب على الصورة';}
+    function enableSelectMode(){isSelectMode=true; cropStart=null; cropEnd=null; drawSelectionOverlay(); selectRectBtn.style.background='#FF9500'; selectRectBtn.style.color='white'; statusDiv.innerText='✂️ وضع التحديد نشط، اسحب على الصورة';}
     
     function setupEvents(){editImgDom.addEventListener('touchstart',onTouchStart,{passive:false}); editImgDom.addEventListener('touchmove',onTouchMove,{passive:false}); editImgDom.addEventListener('touchend',onTouchEnd); editImgDom.addEventListener('mousedown',onMouseDown); window.addEventListener('mousemove',onMouseMove); window.addEventListener('mouseup',onMouseUp);}
     
