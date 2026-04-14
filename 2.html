@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#1C1C1E">
-    <title>OCRcall²⁰²⁶ | Almas Solutions</title>
+    <title>OCRcall²⁰²٦ | Almas Solutions</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
-    
+
     <style>
         :root {
             --primary: #007AFF; --success: #34C759; --danger: #FF3B30;
@@ -16,16 +16,44 @@
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { background: var(--bg); font-family: system-ui, -apple-system; overflow: hidden; position: fixed; width: 100%; height: 100%; }
 
-        .app-container { height: 100%; max-width: 500px; margin: auto; background: white; display: flex; flex-direction: column; }
+        /* --- تعديل الهيدر ليكون في أعلى طبقة --- */
+        .master-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            padding: 10px 0;
+            background: rgba(44, 62, 80, 0.85); /* خلفية داكنة مع شفافية */
+            backdrop-filter: blur(10px);
+            z-index: 10001; /* أعلى من شاشة التحميل (1000) */
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .home-link {
+            text-decoration: none;
+            color: white;
+            background: #e74c3c;
+            padding: 6px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.85rem;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
 
-        /* منطقة العرض العلوية (ديناميكية الارتفاع) */
+        .app-container { height: 100%; max-width: 500px; margin: auto; background: white; display: flex; flex-direction: column; padding-top: 45px; }
+
+        /* منطقة العرض العلوية */
         .viewer-area {
             width: 100%; background: #000; position: relative;
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); flex-shrink: 0;
             display: flex; align-items: center; justify-content: center; overflow: hidden;
         }
-        .mode-preview { height: 50vh; } /* وضع الكاميرا/القص */
-        .mode-result { height: 25vh; border-bottom: 3px solid var(--gold); } /* وضع النتيجة */
+        .mode-preview { height: 50vh; } 
+        .mode-result { height: 25vh; border-bottom: 3px solid var(--gold); }
         .mode-hidden { height: 0; }
 
         #video, #imgCrop, #imgFinal { width: 100%; height: 100%; object-fit: contain; }
@@ -74,6 +102,12 @@
 </head>
 <body>
 
+<header class="master-header">
+    <a href="0.html" class="home-link">
+        <i class="fas fa-home"></i> القائمة الرئيسية
+    </a>
+</header>
+
 <div class="loader-mask" id="loader">
     <div class="spinner"></div>
     <p style="margin-top: 20px; letter-spacing: 1px;" id="loaderText">جاري المعالجة...</p>
@@ -85,7 +119,7 @@
         <img id="imgCrop" style="display:none;">
         <img id="imgFinal" style="display:none;">
         <div class="focus-box" id="focusBox"></div>
-        
+
         <div class="floating-tools">
             <button class="circle-btn" id="btnFlash"><i class="fas fa-bolt"></i></button>
             <button class="circle-btn" id="btnRotate" style="display:none;"><i class="fas fa-sync-alt"></i></button>
@@ -165,7 +199,6 @@
         focus: document.getElementById('focusBox')
     };
 
-    // 1. تهيئة المحرك فوراً (Pre-loading)
     async function initSystem() {
         try {
             ocrWorker = await Tesseract.createWorker('ara+eng');
@@ -178,7 +211,6 @@
         }
     }
 
-    // 2. الكاميرا والفلاش
     async function startCam() {
         try {
             camStream = await navigator.mediaDevices.getUserMedia({ 
@@ -190,7 +222,7 @@
             el.iFinal.style.display = 'none';
             el.view.className = "viewer-area mode-preview";
             el.focus.style.display = 'block';
-            
+
             document.getElementById('stepStart').style.display = 'none';
             document.getElementById('btnInitCam').innerHTML = '<i class="fas fa-camera-retro"></i> التقاط الصورة الآن';
             document.getElementById('btnInitCam').onclick = capture;
@@ -205,7 +237,6 @@
         const track = camStream.getVideoTracks()[0];
         const caps = track.getCapabilities();
         if (!caps.torch) return alert("الفلاش غير مدعوم في هذا الوضع");
-        
         const current = track.getSettings().torch;
         await track.applyConstraints({ advanced: [{ torch: !current }] });
     }
@@ -215,21 +246,17 @@
         canvas.width = el.vid.videoWidth;
         canvas.height = el.vid.videoHeight;
         canvas.getContext('2d').drawImage(el.vid, 0, 0);
-        
         if (camStream) camStream.getTracks().forEach(t => t.stop());
         setupCropper(canvas.toDataURL('image/png'));
     }
 
-    // 3. الاقتصاص والتحليل
     function setupCropper(src) {
         el.vid.style.display = 'none';
         el.focus.style.display = 'none';
         el.iCrop.src = src;
         el.iCrop.style.display = 'block';
-        
         if (cropper) cropper.destroy();
         cropper = new Cropper(el.iCrop, { viewMode: 1, autoCropArea: 0.8, background: false });
-        
         document.getElementById('stepStart').style.display = 'none';
         document.getElementById('stepCrop').style.display = 'block';
         document.getElementById('btnRotate').style.display = 'block';
@@ -239,20 +266,13 @@
         if (!cropper) return;
         const cropCanvas = cropper.getCroppedCanvas();
         const dataUrl = cropCanvas.toDataURL('image/png');
-        
         el.load.style.display = 'flex';
         document.getElementById('loaderText').innerText = "جاري تحليل النص...";
-
         try {
             const { data: { text } } = await ocrWorker.recognize(dataUrl);
-            
-            // استخراج الرقم (010, 011, 012, 015)
             const matched = text.replace(/\s/g, '').match(/01[0125][0-9]{8}/);
             phoneNum = matched ? matched[0] : "";
-            
-            // استخراج أول سطر لا يحتوي على أرقام كـ "اسم محتمل"
             const nameLine = text.split('\n').map(s => s.trim()).find(s => s.length > 2 && !/[0-9]/.test(s)) || "";
-
             finishOCR(dataUrl, nameLine, phoneNum);
         } catch (err) {
             alert("حدث خطأ أثناء المعالجة");
@@ -267,18 +287,15 @@
         el.iFinal.src = img;
         el.iFinal.style.display = 'block';
         el.view.className = "viewer-area mode-result";
-        
         document.getElementById('stepCrop').style.display = 'none';
         document.getElementById('stepResult').style.display = 'flex';
         document.getElementById('btnExit').style.display = 'block';
         document.getElementById('btnRotate').style.display = 'none';
-
         document.getElementById('resName').value = name;
         document.getElementById('resPhone').innerText = phone || "أدخل الرقم";
         phoneNum = phone;
     }
 
-    // 4. أدوات مساعدة
     window.toggleNum = () => {
         const n = document.getElementById('numpad');
         n.style.display = n.style.display === 'none' ? 'grid' : 'none';
@@ -293,19 +310,16 @@
 
     window.setMsg = (m) => document.getElementById('msgArea').value = m;
 
-    // 5. الأحداث (Listeners)
     document.getElementById('btnInitCam').onclick = startCam;
     document.getElementById('btnFlash').onclick = toggleFlash;
     document.getElementById('btnDoOCR').onclick = runOCR;
     document.getElementById('rotRange').oninput = (e) => { if (cropper) cropper.rotateTo(e.target.value); };
     document.getElementById('btnExit').onclick = () => location.reload();
-
     document.getElementById('fileIn').onchange = (e) => {
         const reader = new FileReader();
         reader.onload = (ev) => setupCropper(ev.target.result);
         reader.readAsDataURL(e.target.files[0]);
     };
-
     document.getElementById('finalCall').onclick = () => { if(phoneNum) window.location.href = `tel:${phoneNum}`; };
     document.getElementById('finalWA').onclick = () => { 
         if(phoneNum) window.open(`https://wa.me/2${phoneNum}?text=${encodeURIComponent(document.getElementById('msgArea').value)}`); 
@@ -321,19 +335,5 @@
 
     initSystem();
 </script>
-
-<header style="width: 100%; display: flex; justify-content: center; padding: 10px 0; background: #2c3e50;">
-    <a href="0.html" style="
-        text-decoration: none;
-        color: white;
-        background: #e74c3c;
-        padding: 5px 20px;
-        border-radius: 20px;
-        font-weight: bold;
-        font-size: 0.9rem;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    ">🏠 القائمة الرئيسية</a>
-</header>
-
 </body>
 </html>
