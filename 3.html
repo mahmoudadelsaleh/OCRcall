@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#1C1C1E">
+    <title>Auto-OCR 2026 | Almas Solutions</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { --primary: #007AFF; --gold: #D4AF37; --dark: #1C1C1E; }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { background: #000; font-family: system-ui; overflow: hidden; position: fixed; width: 100%; height: 100%; color: white; }
+
+        /* منطقة الكاميرا ملء الشاشة */
+        .camera-layer { position: absolute; inset: 0; z-index: 1; }
+        #video { width: 100%; height: 100%; object-fit: cover; }
+
+        /* طبقة المسح (الباركود ستايل) */
+        .scanner-overlay {
+            position: absolute; inset: 0; z-index: 2;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.4);
+        }
+        .scan-window {
+            width: 280px; height: 150px; border: 2px solid rgba(255,255,255,0.5);
+            border-radius: 15px; position: relative; box-shadow: 0 0 0 2000px rgba(0,0,0,0.5);
+            transition: border-color 0.3s;
+        }
+        .scan-window.found { border-color: #34C759; border-width: 4px; }
+        
+        /* خط الليزر المتحرك */
+        .laser {
+            position: absolute; width: 100%; height: 2px; background: var(--primary);
+            top: 0; left: 0; box-shadow: 0 0 10px var(--primary);
+            animation: scanning 2s infinite linear;
+        }
+        @keyframes scanning { 0% { top: 0; } 50% { top: 100%; } 100% { top: 0; } }
+
+        /* لوحة التحكم السفلية (تظهر عند العثور على رقم) */
+        .bottom-sheet {
+            position: absolute; bottom: 0; left: 0; right: 0; z-index: 10;
+            background: white; color: black; border-radius: 25px 25px 0 0;
+            padding: 20px; transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            max-width: 500px; margin: auto;
+        }
+        .bottom-sheet.show { transform: translateY(0); }
+
+        .phone-result { font-size: 32px; font-weight: 900; text-align: center; color: var(--primary); margin: 10px 0; }
+        .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+        .btn { padding: 15px; border: none; border-radius: 15px; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; }
+        .btn-call { background: var(--primary); color: white; }
+        .btn-wa { background: #34C759; color: white; }
+        .btn-close { background: #eee; color: #333; grid-column: span 2; }
+
+        .status-msg { position: absolute; top: 40px; width: 100%; text-align: center; z-index: 5; font-size: 14px; font-weight: bold; }
+        #flashBtn { position: absolute; top: 40px; right: 20px; z-index: 5; background: rgba(0,0,0,0.5); color: white; border: none; width: 45px; height: 45px; border-radius: 50%; }
+    </style>
+</head>
+<body>
+
+<div class="status-msg" id="status">⏳ جاري تشغيل المحرك التلقائي...</div>
+<button id="flashBtn"><i class="fas fa-bolt"></i></button>
+
+<div class="camera-layer">
+    <video id="video" autoplay playsinline></video>
+</div>
+
+<div class="scanner-overlay" id="overlay">
+    <div class="scan-window" id="window">
+        <div class="laser"></div>
+    </div>
+    <p style="margin-top: 20px; font-size: 14px;">ضع رقم الهاتف داخل الإطار</p>
+</div>
+
+<div class="bottom-sheet" id="sheet">
+    <div style="text-align:center; color:#888; font-size:12px;">تم العثور على رقم!</div>
+    <div class="phone-result" id="resPhone">01000000000</div>
+    <input type="text" id="resName" placeholder="اسم العميل (إن وجد)" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:10px; text-align:center; font-weight:bold; margin-bottom:10px;">
+    
+    <div class="btn-grid">
+        <button class="btn btn-call" id="btnCall"><i class="fas fa-phone"></i> اتصال</button>
+        <button class="btn btn-wa" id="btnWA"><i class="fab fa-whatsapp"></i> واتساب</button>
+        <button class="btn btn-close" onclick="closeSheet()">إغلاق ومسح جديد</button>
+    </div>
+</div>
+
+<canvas id="helperCanvas" style="display:none;"></canvas>
+
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script>
+    let worker = null;
+    let stream = null;
+    let isScanning = true;
+    let lastFound = "";
+
+    async function init() {
+        worker = await Tesseract.createWorker('ara+eng');
+        await worker.setParameters({
+            tessedit_char_whitelist: '0123456789', // نركز فقط على الأرقام للسرعة القصوى
+        });
+        document.getElementById('status').innerText = "✅ وجه الكاميرا نحو الرقم";
+        startCamera();
+    }
+
+    async function startCamera() {
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } 
+            });
+            document.getElementById('video').srcObject = stream;
+            // بدء حلقة المسح التلقائي
+            requestAnimationFrame(scanLoop);
+        } catch (e) {
+            alert("خطأ في الكاميرا");
+        }
+    }
+
+    async function scanLoop() {
+        if (!isScanning) return;
+
+        const video = document.getElementById('video');
+        if (video.readyState === video.HAVE_ENOUGH_DATA) {
+            const canvas = document.getElementById('helperCanvas');
+            const ctx = canvas.getContext('2d');
+
+            // تحديد أبعاد منطقة القص (ما يراه المستخدم في المربع)
+            const scale = video.videoWidth / window.innerWidth;
+            const scanW = 280 * scale;
+            const scanH = 150 * scale;
+            const scanX = (video.videoWidth - scanW) / 2;
+            const scanY = (video.videoHeight - scanH) / 2;
+
+            canvas.width = scanW;
+            canvas.height = scanH;
+            
+            // قص المنطقة المحددة فقط من الفيديو ورسمها على الكانفاس
+            ctx.drawImage(video, scanX, scanY, scanW, scanH, 0, 0, scanW, scanH);
+
+            // إرسال الصورة المقتصصة للمحرك
+            const { data: { text } } = await worker.recognize(canvas);
+            const cleanText = text.replace(/\s/g, '');
+            const match = cleanText.match(/01[0125][0-9]{8}/);
+
+            if (match) {
+                onFound(match[0]);
+            }
+        }
+
+        // تكرار العملية كل 500 ملي ثانية (مرتين في الثانية لعدم إجهاد الجهاز)
+        if (isScanning) setTimeout(scanLoop, 500);
+    }
+
+    function onFound(phone) {
+        if (phone === lastFound) return; // منع التكرار لنفس الرقم
+        
+        isScanning = false;
+        lastFound = phone;
+        
+        // تنبيه هزاز (إن وجد)
+        if (navigator.vibrate) navigator.vibrate(100);
+
+        document.getElementById('window').classList.add('found');
+        document.getElementById('resPhone').innerText = phone;
+        document.getElementById('sheet').classList.add('show');
+    }
+
+    window.closeSheet = () => {
+        document.getElementById('sheet').classList.remove('show');
+        document.getElementById('window').classList.remove('found');
+        lastFound = "";
+        isScanning = true;
+        scanLoop();
+    };
+
+    document.getElementById('btnCall').onclick = () => window.location.href = `tel:${lastFound}`;
+    document.getElementById('btnWA').onclick = () => window.open(`https://wa.me/2${lastFound}`);
+    
+    document.getElementById('flashBtn').onclick = async () => {
+        const track = stream.getVideoTracks()[0];
+        const state = track.getSettings().torch;
+        await track.applyConstraints({ advanced: [{ torch: !state }] });
+    };
+
+    init();
+</script>
+</body>
+</html>
