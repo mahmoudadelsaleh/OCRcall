@@ -30,13 +30,13 @@
             text-align: center;
         }
         h1 { color: var(--primary-color); font-size: 1.5rem; margin-bottom: 25px; }
-        .grid { display: grid; gap: 15px; }
+        .grid { display: grid; gap: 12px; } /* تقليل الفراغ قليلاً لاستيعاب 5 روابط */
         .card {
             display: block;
             text-decoration: none;
             background: var(--accent-color);
             color: white;
-            padding: 15px;
+            padding: 14px;
             border-radius: 10px;
             font-weight: bold;
             transition: transform 0.2s, background 0.2s;
@@ -59,17 +59,25 @@
         <a href="2.html" class="card">الإصدار الثاني (V2)</a>
         <a href="3.html" class="card">الإصدار الثالث (V3)</a>
         <a href="4.html" class="card">الإصدار الرابع (V4)</a>
+        <a href="5.html" class="card">الإصدار الخامس (V5)</a>
     </div>
     <p id="status" class="offline-badge">جاهز للعمل بدون إنترنت ✅</p>
 </div>
 
 <script>
-    // تسجيل Service Worker للعمل بدون إنترنت
+    // تسجيل Service Worker للعمل بدون إنترنت وتحديث قائمة الملفات
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             const swCode = `
-                const cacheName = 'ocr-v1';
-                const assets = ['./0.html', './1.html', './2.html', './3.html', './4.html'];
+                const cacheName = 'ocr-v2'; // تم تحديث الإصدار لتحديث الكاش
+                const assets = [
+                    './0.html', 
+                    './1.html', 
+                    './2.html', 
+                    './3.html', 
+                    './4.html', 
+                    './5.html'
+                ];
                 self.addEventListener('install', e => {
                     e.waitUntil(caches.open(cacheName).then(cache => cache.addAll(assets)));
                 });
