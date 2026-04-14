@@ -1,1 +1,235 @@
-wait 🫷
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#1C1C1E">
+    <title>كاشف الفواتير الاحترافي | Almas Solutions</title>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+
+    <style>
+        :root { --primary: #007bff; --success: #28a745; --danger: #dc3545; --warning: #f39c12; --bg: #f4f7f6; --dark-header: #2c3e50; }
+
+        html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; background: var(--bg); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+
+        /* --- الهيدر الموحد في أعلى طبقة --- */
+        .master-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            padding: 8px 0;
+            background: rgba(44, 62, 80, 0.9);
+            backdrop-filter: blur(8px);
+            z-index: 10000;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .home-link {
+            text-decoration: none;
+            color: white;
+            background: #e74c3c;
+            padding: 5px 18px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.85rem;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.4);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .main-wrapper { display: flex; flex-direction: column; height: 100vh; width: 100%; max-width: 500px; margin: auto; background: white; padding-top: 45px; }
+
+        .preview-container { 
+            flex: 0 0 38%; background: #000; position: relative; 
+            display: block; overflow: hidden; padding: 0; margin: 0;
+        }
+        #video, #image-to-crop { 
+            position: absolute; top: 0; right: 0;
+            width: 100%; height: 100%; object-fit: contain; margin: 0;
+        }
+
+        .controls-section { flex: 1; padding: 8px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; }
+
+        .btn { 
+            width: 90%; padding: 12px; margin: 4px 0; border-radius: 12px; 
+            border: none; font-weight: bold; cursor: pointer; font-size: 16px; 
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-warning { background: var(--warning); color: white; }
+
+        .result-card { width: 100%; display: none; }
+        .edit-field { width: 95%; padding: 8px; border: 2px solid #ddd; border-radius: 10px; font-size: 16px; margin: 4px auto; background: #fffbe6; text-align: center; display: block; }
+        .phone-val { font-size: 24px; font-weight: bold; color: #d32f2f; text-align: center; margin: 4px auto; border: 2px dashed var(--primary); padding: 5px; border-radius: 10px; width: fit-content; min-width: 180px; }
+
+        .mini-keyboard { display: none; grid-template-columns: repeat(3, 1fr); gap: 5px; background: #eee; padding: 8px; border-radius: 12px; margin: 8px auto; width: 200px; }
+        .key { background: white; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 18px; text-align: center; cursor: pointer; box-shadow: 0 2px 0 #bbb; }
+
+        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 95%; margin: 8px auto; }
+        .action-grid .btn { width: 100%; margin: 0; padding: 10px; font-size: 14px; }
+
+        .chips-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; margin: 4px 0; }
+        .chip { background: #e9ecef; padding: 4px 10px; border-radius: 15px; font-size: 11px; cursor: pointer; border: 1px solid #ccc; }
+
+        #status { font-size: 12px; color: #555; font-weight: bold; margin-bottom: 2px; }
+    </style>
+</head>
+<body>
+
+<header class="master-header">
+    <a href="0.html" class="home-link">
+        <i class="fas fa-home"></i> القائمة الرئيسية
+    </a>
+</header>
+
+<div class="main-wrapper">
+    <div class="preview-container">
+        <video id="video" autoplay playsinline></video>
+        <img id="image-to-crop" style="display:none;">
+    </div>
+
+    <div class="controls-section">
+        <div id="status">جاهز</div>
+
+        <div id="init-btns" style="width: 100%;">
+            <button class="btn btn-primary" id="btn-camera">📸 فتح الكاميرا</button>
+            <label class="btn btn-primary" style="background:#6c757d; display: block; text-align: center;" for="file-in">📁 رفع صورة</label>
+            <input type="file" id="file-in" accept="image/*" style="display:none;">
+        </div>
+
+        <div id="crop-btns" style="display:none; width: 100%;">
+            <div style="background:#e2e8f0; padding:8px; border-radius:12px; margin: 5px auto; width: 90%;">
+                <input type="range" id="rot-slider" min="-45" max="45" step="1" value="0" style="width:100%">
+            </div>
+            <button class="btn btn-success" id="btn-ocr">🔍 قراءة البيانات</button>
+            <button class="btn btn-danger" onclick="location.reload()">🔄 إعادة</button>
+        </div>
+
+        <div id="result-ui" class="result-card">
+            <input type="text" id="name-input" class="edit-field" placeholder="اسم العميل">
+            <div class="phone-val" id="phone-display"></div>
+
+            <button class="btn btn-warning" style="width:auto; padding:5px 20px; font-size:12px; margin:auto; display:block;" onclick="toggleKB()">✏️ تعديل الرقم</button>
+
+            <div id="mini-kb" class="mini-keyboard">
+                <div class="key" onclick="press('7')">7</div><div class="key" onclick="press('8')">8</div><div class="key" onclick="press('9')">9</div>
+                <div class="key" onclick="press('4')">4</div><div class="key" onclick="press('5')">5</div><div class="key" onclick="press('6')">6</div>
+                <div class="key" onclick="press('1')">1</div><div class="key" onclick="press('2')">2</div><div class="key" onclick="press('3')">3</div>
+                <div class="key" style="background:#ff4d4d; color:white" onclick="press('X')">X</div><div class="key" onclick="press('0')">0</div><div class="key" style="background:#888; color:white" onclick="press('C')">C</div>
+            </div>
+
+            <div class="chips-container" id="chips"></div>
+            <textarea id="msg-text" class="edit-field" rows="1" style="font-size: 13px;" placeholder="رسالة الواتساب"></textarea>
+
+            <div class="action-grid">
+                <button class="btn btn-success" id="btn-wa">💬 واتساب</button>
+                <button class="btn btn-primary" id="btn-call">📞 اتصال</button>
+                <button class="btn btn-warning" id="btn-vcf">👤 حفظ</button>
+                <button class="btn btn-danger" onclick="location.reload()">🔄 إعادة</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let cropper, currentRot = 0;
+    const img = document.getElementById('image-to-crop'), vid = document.getElementById('video');
+    const phoneDisp = document.getElementById('phone-display'), nameInput = document.getElementById('name-input');
+    const msgText = document.getElementById('msg-text'), chipsDiv = document.getElementById('chips');
+    let savedMsgs = JSON.parse(localStorage.getItem('user_msgs')) || ["تم استلام الطلب.", "الطلب جاهز."];
+
+    document.getElementById('btn-camera').onclick = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+            vid.srcObject = stream; vid.style.display = "block";
+            document.getElementById('btn-camera').innerText = "📸 التقاط";
+            document.getElementById('btn-camera').onclick = () => {
+                const c = document.createElement('canvas');
+                c.width = vid.videoWidth; c.height = vid.videoHeight;
+                c.getContext('2d').drawImage(vid, 0, 0);
+                initCrop(c.toDataURL('image/png'));
+                stream.getTracks().forEach(t => t.stop()); vid.style.display = "none";
+            };
+        } catch(e) { alert("يرجى تفعيل الكاميرا"); }
+    };
+
+    document.getElementById('file-in').onchange = (e) => {
+        if(e.target.files[0]) {
+            const r = new FileReader(); r.onload = (ev) => initCrop(ev.target.result); r.readAsDataURL(e.target.files[0]);
+        }
+    };
+
+    function initCrop(src) {
+        img.src = src; img.style.display = "block";
+        document.getElementById('init-btns').style.display = "none";
+        document.getElementById('crop-btns').style.display = "block";
+        if (cropper) cropper.destroy();
+        cropper = new Cropper(img, { viewMode: 1, autoCropArea: 0.8 });
+    }
+
+    document.getElementById('rot-slider').oninput = function() {
+        let a = parseInt(this.value);
+        cropper.rotate(a - currentRot);
+        currentRot = a;
+    };
+
+    document.getElementById('btn-ocr').onclick = () => {
+        const canvas = cropper.getCroppedCanvas({ imageSmoothingHigh: true });
+        document.getElementById('status').innerText = "قراءة... ⏳";
+        Tesseract.recognize(canvas.toDataURL(), 'eng+ara').then(({ data: { text } }) => {
+            const p = text.replace(/[\s-]/g, '').match(/01[0125][0-9]{8}/);
+            const lines = text.split('\n').filter(l => l.trim().length > 2);
+            nameInput.value = lines[0] ? lines[0].replace(/العميل|Name|:|Customer/gi, '').trim() : "عميل";
+            phoneDisp.innerText = p ? p[0] : "";
+            document.getElementById('result-ui').style.display = "block";
+            document.getElementById('crop-btns').style.display = "none";
+            document.getElementById('status').innerText = "تم ✅";
+            cropper.destroy();
+            img.src = canvas.toDataURL();
+            img.style.display = "block";
+        });
+    };
+
+    function toggleKB() {
+        const kb = document.getElementById('mini-kb');
+        kb.style.display = (kb.style.display === 'grid') ? 'none' : 'grid';
+    }
+
+    window.press = (v) => {
+        if (v === 'C') phoneDisp.innerText = '';
+        else if (v === 'X') phoneDisp.innerText = phoneDisp.innerText.slice(0, -1);
+        else if (phoneDisp.innerText.length < 11) phoneDisp.innerText += v;
+    };
+
+    function renderChips() {
+        chipsDiv.innerHTML = '';
+        savedMsgs.forEach(m => {
+            const c = document.createElement('div'); c.className = 'chip';
+            c.innerText = m.substring(0, 10) + '..';
+            c.onclick = () => msgText.value = m;
+            chipsDiv.appendChild(c);
+        });
+    }
+
+    document.getElementById('btn-wa').onclick = () => { if(phoneDisp.innerText) window.open(`https://wa.me/2${phoneDisp.innerText}?text=${encodeURIComponent(msgText.value)}`); };
+    document.getElementById('btn-call').onclick = () => { if(phoneDisp.innerText) window.location.href = `tel:${phoneDisp.innerText}`; };
+    document.getElementById('btn-vcf').onclick = () => {
+        if(!phoneDisp.innerText) return;
+        const vcf = `BEGIN:VCARD\nVERSION:3.0\nFN:${nameInput.value}\nTEL;TYPE=CELL:${phoneDisp.innerText}\nEND:VCARD`;
+        const a = document.createElement('a');
+        a.download = `${nameInput.value}.vcf`;
+        a.href = URL.createObjectURL(new Blob([vcf], {type: "text/vcard"}));
+        a.click();
+    };
+
+    renderChips();
+</script>
+</body>
+</html>
