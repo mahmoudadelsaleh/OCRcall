@@ -11,6 +11,34 @@
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { background: #000; font-family: system-ui, -apple-system; overflow: hidden; position: fixed; width: 100%; height: 100%; color: white; }
 
+        /* --- تعديل الهيدر ليكون في أعلى طبقة --- */
+        .master-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            padding: 10px 0;
+            background: rgba(44, 62, 80, 0.8); /* خلفية داكنة شفافة قليلاً */
+            backdrop-filter: blur(8px); /* تأثير زجاجي */
+            z-index: 10000; /* أعلى من كل العناصر */
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .home-link {
+            text-decoration: none;
+            color: white;
+            background: #e74c3c;
+            padding: 6px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.85rem;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
         /* منطقة الفيديو */
         .camera-container { position: absolute; inset: 0; z-index: 1; }
         #video { width: 100%; height: 100%; object-fit: cover; }
@@ -37,9 +65,9 @@
         }
         @keyframes scanAnim { 0%, 100% { top: 10%; opacity: 0.5; } 50% { top: 85%; opacity: 1; } }
 
-        /* الأزرار العلوية */
+        /* الأزرار العلوية - تم تنزيلها قليلاً لكي لا تختفي خلف الهيدر الجديد */
         .header-tools {
-            position: absolute; top: 40px; width: 100%;
+            position: absolute; top: 65px; width: 100%;
             display: flex; justify-content: space-between; padding: 0 20px; z-index: 10;
         }
         .circle-btn {
@@ -59,7 +87,7 @@
 
         /* اللوحة السفلية للنتائج */
         .result-sheet {
-            position: absolute; bottom: 0; left: 0; right: 0; z-index: 100;
+            position: absolute; bottom: 0; left: 0; right: 0; z-index: 10001; /* أعلى من الهيدر عند ظهور النتائج */
             background: white; color: var(--dark); border-radius: 25px 25px 0 0;
             padding: 25px; transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.17, 0.84, 0.44, 1);
             max-width: 500px; margin: auto; box-shadow: 0 -10px 30px rgba(0,0,0,0.3);
@@ -67,7 +95,7 @@
         .result-sheet.active { transform: translateY(0); }
         .res-title { text-align: center; color: #888; font-size: 12px; font-weight: bold; margin-bottom: 5px; }
         .phone-num { font-size: 38px; font-weight: 900; text-align: center; color: var(--primary); letter-spacing: 2px; margin-bottom: 20px; }
-        
+
         .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .action-btn { 
             padding: 16px; border: none; border-radius: 15px; font-weight: 800; 
@@ -77,10 +105,16 @@
         .btn-wa { background: var(--success); color: white; }
         .btn-retry { background: #eee; color: #555; grid-column: span 2; margin-top: 5px; }
 
-        #status-bar { position: absolute; top: 100px; width: 100%; text-align: center; z-index: 5; font-size: 13px; color: var(--gold); font-weight: 500; }
+        #status-bar { position: absolute; top: 125px; width: 100%; text-align: center; z-index: 5; font-size: 13px; color: var(--gold); font-weight: 500; }
     </style>
 </head>
 <body>
+
+<header class="master-header">
+    <a href="0.html" class="home-link">
+        <i class="fas fa-home"></i> القائمة الرئيسية
+    </a>
+</header>
 
 <div class="header-tools">
     <button class="circle-btn" onclick="location.reload()"><i class="fas fa-redo"></i></button>
@@ -109,7 +143,7 @@
 <div class="result-sheet" id="resSheet">
     <div class="res-title">✨ تم التقاط الرقم تلقائياً</div>
     <div class="phone-num" id="displayPhone">--------</div>
-    
+
     <div class="actions">
         <button class="action-btn btn-call" id="callNow"><i class="fas fa-phone"></i> اتصال</button>
         <button class="action-btn btn-wa" id="waNow"><i class="fab fa-whatsapp"></i> واتساب</button>
@@ -127,7 +161,6 @@
     let scanningActive = true;
     let detectedPhone = "";
 
-    // 1. تشغيل المحرك (OCR)
     async function setupOCR() {
         worker = await Tesseract.createWorker('ara+eng');
         await worker.setParameters({ tessedit_char_whitelist: '0123456789' });
@@ -135,7 +168,6 @@
         startLiveCamera();
     }
 
-    // 2. تشغيل الكاميرا وإعداد الزوم
     async function startLiveCamera() {
         try {
             stream = await navigator.mediaDevices.getUserMedia({ 
@@ -145,7 +177,6 @@
             videoEl.srcObject = stream;
             videoTrack = stream.getVideoTracks()[0];
 
-            // إعداد السلايدر (Zoom)
             const caps = videoTrack.getCapabilities();
             if (caps.zoom) {
                 document.getElementById('zoomUI').style.display = 'flex';
@@ -165,7 +196,6 @@
         }
     }
 
-    // 3. حلقة المعالجة التلقائية (بدون تصوير يدوي)
     async function processFrame() {
         if (!scanningActive) return;
 
@@ -174,7 +204,6 @@
             const canvas = document.getElementById('hiddenCanvas');
             const ctx = canvas.getContext('2d');
 
-            // حساب أبعاد القص للمستطيل العريض
             const scaleX = video.videoWidth / window.innerWidth;
             const scaleY = video.videoHeight / window.innerHeight;
             const cw = (window.innerWidth * 0.85) * scaleX;
@@ -193,16 +222,14 @@
                 onSuccess(found[0]);
             }
         }
-        if (scanningActive) setTimeout(processFrame, 450); // سرعة معالجة متوازنة
+        if (scanningActive) setTimeout(processFrame, 450);
     }
 
     function onSuccess(phone) {
         if (phone === detectedPhone) return;
         scanningActive = false;
         detectedPhone = phone;
-        
-        if (navigator.vibrate) navigator.vibrate([100, 50, 100]); // اهتزاز النجاح
-
+        if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
         document.getElementById('scanBox').classList.add('success');
         document.getElementById('displayPhone').innerText = phone;
         document.getElementById('resSheet').classList.add('active');
@@ -218,8 +245,7 @@
 
     document.getElementById('callNow').onclick = () => window.location.href = `tel:${detectedPhone}`;
     document.getElementById('waNow').onclick = () => window.open(`https://wa.me/2${detectedPhone}`);
-    
-    // زر الفلاش
+
     document.getElementById('flashToggle').onclick = async () => {
         if (videoTrack) {
             const isFlashOn = videoTrack.getSettings().torch;
@@ -229,19 +255,5 @@
 
     setupOCR();
 </script>
-
-<header style="width: 100%; display: flex; justify-content: center; padding: 10px 0; background: #2c3e50;">
-    <a href="0.html" style="
-        text-decoration: none;
-        color: white;
-        background: #e74c3c;
-        padding: 5px 20px;
-        border-radius: 20px;
-        font-weight: bold;
-        font-size: 0.9rem;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    ">🏠 القائمة الرئيسية</a>
-</header>
-
 </body>
 </html>
