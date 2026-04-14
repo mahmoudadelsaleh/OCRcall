@@ -16,18 +16,18 @@
         .status-bar{background:var(--dark);color:white;padding:6px 12px;display:flex;justify-content:space-between;font-size:12px;height:38px;}
         .app-container{height:calc(100% - 38px);max-width:500px;margin:auto;background:white;display:flex;flex-direction:column;overflow:hidden;}
         
-        /* منطقة عرض الصورة المقتصصة فقط - تحت الهيدر مباشرة */
-        .cropped-preview-area{width:100%;aspect-ratio:3/1;background:#000;position:relative;overflow:hidden;flex-shrink:0;display:none;}
-        .cropped-preview-area.show{display:block;}
-        .cropped-preview-area img{width:100%;height:100%;object-fit:contain;}
-        .clear-cropped{position:absolute;top:5px;left:5px;background:rgba(0,0,0,0.7);border:none;color:white;width:30px;height:30px;border-radius:50%;cursor:pointer;z-index:10;font-size:14px;}
-        
-        /* منطقة الكاميرا والقص */
-        .camera-crop-area{width:100%;aspect-ratio:3/1;background:#000;position:relative;overflow:hidden;flex-shrink:0;}
+        /* منطقة الكاميرا والقص - ارتفاع 50% في وضع المعاينة */
+        .camera-crop-area{width:100%;height:50vh;background:#000;position:relative;overflow:hidden;flex-shrink:0;}
         #video,#image-to-crop{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;}
         .focus-rectangle{position:absolute;inset:0;border:3px solid #FF9500;box-shadow:0 0 0 2000px rgba(0,0,0,0.6);pointer-events:none;z-index:5;display:none;}
         .flash-btn{position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.7);border:none;color:white;width:36px;height:36px;border-radius:50%;z-index:10;cursor:pointer;}
         .rot-slider{width:90%;margin:5px auto;display:block;}
+        
+        /* منطقة عرض الصورة المقتصصة - ارتفاع 35% بعد الاقتصاص */
+        .cropped-preview-area{width:100%;height:35vh;background:#000;position:relative;overflow:hidden;flex-shrink:0;display:none;}
+        .cropped-preview-area.show{display:block;}
+        .cropped-preview-area img{width:100%;height:100%;object-fit:contain;}
+        .clear-cropped{position:absolute;top:5px;left:5px;background:rgba(0,0,0,0.7);border:none;color:white;width:30px;height:30px;border-radius:50%;cursor:pointer;z-index:10;font-size:14px;}
         
         .controls{flex:1;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:8px;}
         .status{background:#F2F2F7;padding:6px;text-align:center;border-radius:10px;font-size:12px;color:var(--primary);}
@@ -78,7 +78,7 @@
 <body>
 <div class="status-bar"><span>📱 OCRcall²⁰²⁶</span><span id="offlineBadge" style="display:none;">⚠️ غير متصل</span></div>
 <div class="app-container">
-    <!-- منطقة الكاميرا والقص (تختفي بعد الاقتصاص) -->
+    <!-- منطقة الكاميرا والقص - ارتفاع 50vh للمعاينة -->
     <div class="camera-crop-area" id="cameraCropArea">
         <div class="focus-rectangle" id="focusRectangle"></div>
         <video id="video" autoplay playsinline></video>
@@ -86,7 +86,7 @@
         <button class="flash-btn" id="flashBtn" style="display:none;">🔦</button>
     </div>
     
-    <!-- منطقة عرض الصورة المقتصصة (تظهر تحت الهيدر مباشرة بعد الاقتصاص) -->
+    <!-- منطقة عرض الصورة المقتصصة - ارتفاع 35vh بعد الاقتصاص -->
     <div class="cropped-preview-area" id="croppedPreviewArea">
         <button class="clear-cropped" id="clearCroppedBtn">✖</button>
         <img id="croppedPreviewImg" alt="Cropped preview">
@@ -237,7 +237,7 @@
             }
             if(name) customerName.value = name.trim();
             
-            // عرض الصورة المقتصصة في المعاينة (أسفل الهيدر)
+            // عرض الصورة المقتصصة في المعاينة (ارتفاع 35vh)
             croppedPreviewImg.src = imageData;
             croppedPreviewArea.classList.add('show');
             
@@ -259,7 +259,7 @@
             cropper.destroy();
             cropper = null;
             cropScreen.style.display = 'none';
-            cameraCropArea.classList.add('hide'); // إخفاء منطقة الكاميرا والقص
+            cameraCropArea.classList.add('hide'); // إخفاء منطقة الكاميرا (ارتفاع 50vh)
             resultScreen.style.display = 'flex';
             
             performOCR(imageData);
@@ -443,7 +443,6 @@
     document.getElementById('clearCroppedBtn').onclick = () => { 
         croppedPreviewArea.classList.remove('show'); 
         croppedPreviewImg.src = '';
-        // إظهار منطقة الكاميرا مرة أخرى لو حاجة
         cameraCropArea.classList.remove('hide');
     };
     document.getElementById('callBtn').onclick = () => { let p = phoneDisplay.innerText; if(p.length >= 10) window.location.href = `tel:${p}`; else statusDiv.innerText = '⚠️ رقم غير صحيح'; };
